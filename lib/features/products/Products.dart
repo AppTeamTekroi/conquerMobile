@@ -6,11 +6,11 @@ import 'package:get/get.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:vconquer/features/products/product_controller.dart';
 
-import '../../cart/cart_controller.dart';
 import '../../core/enum/post_enum_response.dart';
 import '../../ui/Buttons/buttonBS.dart';
 import '../../ui/color/appColor.dart';
 import '../../ui/richtext.dart';
+import '../cart/cart_controller.dart';
 
 class Products extends StatefulWidget {
   final String? customerId;
@@ -24,11 +24,10 @@ class _ProductsState extends State<Products> {
   final ProductController productController = Get.put(ProductController());
   CartController cartController = Get.put(CartController());
   final List<RxInt> quantities = [];
-  final List<TextEditingController> qtyControllers =
-      []; // List to hold TextEditingControllers
-
+  final List<TextEditingController> qtyControllers = [];
   String filter = "";
   var isEditing = false;
+
   @override
   void initState() {
     super.initState();
@@ -83,15 +82,18 @@ class _ProductsState extends State<Products> {
       }
     });
   }
-
   void _updateCart(int index) {
-    final product = productController.productList[index];
-    cartController.addToCart(
-      context,
-      product["id"].toString(),
-      quantities[index].value,
-      widget.customerId!,
-    );
+  final product = productController.productList[index];
+  cartController.addToCart(
+  context,
+  product["id"].toString(),
+  quantities[index].value,
+  widget.customerId!,
+  );
+  }
+
+  int _calculateTotalQuantity() {
+    return quantities.fold(0, (sum, item) => sum + item.value);
   }
 
   @override
@@ -107,7 +109,6 @@ class _ProductsState extends State<Products> {
       }
       return false; // No valid quantities
     }
-
     return Scaffold(
       backgroundColor: AppColors.primary,
       appBar: AppBar(
@@ -162,9 +163,10 @@ class _ProductsState extends State<Products> {
             ),
         ],
       ),
-      body: Stack(
-        children: [
-          Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+      body: Stack(children: [
+        Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
             Obx(
               () => productController.productList.isEmpty
                   ? Shimmer.fromColors(
@@ -227,20 +229,23 @@ class _ProductsState extends State<Products> {
                       child: ListView.builder(
                         itemCount: 20, // shimmer count
                         itemBuilder: (context, index) {
-                          return Container(
-                            decoration: BoxDecoration(
-                              color: Colors.grey.shade200,
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: Shimmer.fromColors(
-                              baseColor: Colors.grey.shade300,
-                              highlightColor: Colors.grey.shade100,
-                              child: Column(
-                                children: [
-                                  Expanded(
-                                    child: Padding(
+                          return Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: Colors.grey.shade200,
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Shimmer.fromColors(
+                                baseColor: Colors.grey.shade300,
+                                highlightColor: Colors.grey.shade100,
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Padding(
                                       padding: const EdgeInsets.all(8.0),
                                       child: Container(
+                                       // height: 100,
                                         decoration: BoxDecoration(
                                           color: Colors.grey.shade400,
                                           borderRadius:
@@ -248,31 +253,34 @@ class _ProductsState extends State<Products> {
                                         ),
                                       ),
                                     ),
-                                  ),
-                                  Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                        vertical: 4, horizontal: 8),
-                                    child: Container(
-                                      height: 20,
-                                      width: double.infinity,
-                                      decoration: BoxDecoration(
-                                        color: Colors.grey.shade400,
-                                        borderRadius: BorderRadius.circular(7),
+                                    Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                          vertical: 4, horizontal: 8),
+                                      child: Container(
+                                        height: 20,
+                                        width: double.infinity,
+                                        decoration: BoxDecoration(
+                                          color: Colors.grey.shade400,
+                                          borderRadius:
+                                              BorderRadius.circular(7),
+                                        ),
                                       ),
                                     ),
-                                  ),
-                                  Padding(
-                                    padding: const EdgeInsets.only(bottom: 10),
-                                    child: Container(
-                                      height: 30,
-                                      width: 80,
-                                      decoration: BoxDecoration(
-                                        color: Colors.grey.shade400,
-                                        borderRadius: BorderRadius.circular(10),
+                                    Padding(
+                                      padding:
+                                          const EdgeInsets.only(bottom: 10),
+                                      child: Container(
+                                        height: 30,
+                                        width: 80,
+                                        decoration: BoxDecoration(
+                                          color: Colors.grey.shade400,
+                                          borderRadius:
+                                              BorderRadius.circular(10),
+                                        ),
                                       ),
                                     ),
-                                  ),
-                                ],
+                                  ],
+                                ),
                               ),
                             ),
                           );
@@ -281,295 +289,299 @@ class _ProductsState extends State<Products> {
                     )
                   : Expanded(
                       child: Padding(
-                          padding: const EdgeInsets.all(4.0),
-                          child: Obx(() {
-                            if (productController.isLoading.value) {
-                              return Center(child: CircularProgressIndicator());
-                            } else if (productController
-                                .errorMessage.value.isNotEmpty) {
+                        padding: const EdgeInsets.all(4.0),
+                        child: Obx(() {
+                          if (productController.errorMessage.value.isNotEmpty) {
+                            return Center(
+                                child:
+                                    Text(productController.errorMessage.value));
+                          } else {
+                            final dataList =
+                                productController.productList.value;
+
+                            if (dataList.isEmpty) {
                               return Center(
-                                  child: Text(
-                                      productController.errorMessage.value));
-                            } else {
-                              final dataList =
-                                  productController.productList.value;
+                                child: Text(
+                                  'No Products Available', // Display "0" or a custom empty message
+                                  style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold),
+                                ),
+                              );
+                            }
 
-                              return ListView.builder(
-                                  itemCount: dataList
-                                      .length, // Total number of products
-                                  itemBuilder: (context, index) {
-                                    final product = dataList[index];
-                                    // if (index >= quantities.length ||
-                                    //     index >= qtyControllers.length) {
-                                    //   return const SizedBox(); // Safeguard to prevent out-of-bounds access
-                                    // }
-                                    final quantity = quantities[index];
+                            return ListView.builder(
+                              itemCount: dataList.length,
+                              itemBuilder: (context, index) {
+                                final product = dataList[index];
 
-                                    // Save quantity function
-                                    void saveQuantity(int index) {
-                                      setState(() {
-                                        // Update the quantity and exit editing mode
-                                        quantities[index].value = int.parse(
-                                            qtyControllers[index].text);
-                                        isEditing = false;
-                                        cartController.addToCart(
-                                            context,
-                                            product["id"].toString(),
-                                            quantities[index].value,
-                                            widget.customerId!);
-                                      });
-                                    }
-
-                                    return IntrinsicHeight(
-                                        child: Card(
-                                      clipBehavior: Clip.antiAliasWithSaveLayer,
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(15),
-                                      ),
-                                      child: Container(
-                                        color: Colors.white,
-                                        child: Padding(
-                                          padding: const EdgeInsets.all(8.0),
-                                          child: Column(
-                                            mainAxisSize: MainAxisSize.min,
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              Row(
-                                                crossAxisAlignment:
-                                                    CrossAxisAlignment.start,
-                                                children: [
-                                                  CircleAvatar(
-                                                    backgroundColor:
-                                                        Colors.white,
-                                                    radius: 30,
-                                                    child: Image(
-                                                      image: AssetImage(
-                                                          "lib/ui/assets/client.png"),
-                                                      height: 70,
-                                                    ),
+                                return IntrinsicHeight(
+                                  child: Card(
+                                    clipBehavior: Clip.antiAliasWithSaveLayer,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(15),
+                                    ),
+                                    child: Container(
+                                      color: Colors.white,
+                                      child: Padding(
+                                        padding: const EdgeInsets.all(8.0),
+                                        child: Column(
+                                          mainAxisSize: MainAxisSize.min,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Row(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                CircleAvatar(
+                                                  backgroundColor: Colors.white,
+                                                  radius: 30,
+                                                  child: Image.asset(
+                                                    "lib/ui/assets/client.png",
+                                                    height: 70,
                                                   ),
-                                                  SizedBox(width: 10),
-                                                  // Space between avatar and text column
-                                                  Expanded(
-                                                    child: Column(
-                                                      crossAxisAlignment:
-                                                          CrossAxisAlignment
-                                                              .start,
-                                                      children: [
-                                                        Text(
-                                                          product["item_no"] ??
-                                                              'Null',
-                                                          style:
-                                                              const TextStyle(
-                                                            overflow:
-                                                                TextOverflow
-                                                                    .ellipsis,
-                                                            fontSize: 16,
-                                                            fontWeight:
-                                                                FontWeight.bold,
-                                                            color: Colors.black,
-                                                          ),
-                                                        ),
-                                                        SizedBox(height: 4),
-                                                        Text(
-                                                          product['item_desc'] ??
-                                                              'Null',
-                                                          maxLines: 2,
+                                                ),
+                                                SizedBox(width: 10),
+                                                Expanded(
+                                                  child: Column(
+                                                    crossAxisAlignment:
+                                                        CrossAxisAlignment
+                                                            .start,
+                                                    children: [
+                                                      Text(
+                                                        product["item_no"] ??
+                                                            'Null',
+                                                        style: const TextStyle(
                                                           overflow: TextOverflow
                                                               .ellipsis,
-                                                          style:
-                                                              const TextStyle(
-                                                            fontSize: 11,
-                                                            fontWeight:
-                                                                FontWeight.bold,
-                                                            color: Colors.black,
-                                                          ),
+                                                          fontSize: 16,
+                                                          fontWeight:
+                                                              FontWeight.bold,
+                                                          color: Colors.black,
                                                         ),
-                                                        SizedBox(height: 8),
-                                                        Row(
-                                                            mainAxisAlignment:
-                                                                MainAxisAlignment
-                                                                    .spaceBetween,
-                                                            children: [
-                                                              CommonRichText(
-                                                                label: "UoM",
-                                                                value: product[
-                                                                        "uom_code"] ??
-                                                                    '--',
-                                                              ),
-                                                              CommonRichText(
-                                                                label: "GST",
-                                                                value: product[
-                                                                        "gst_rate"] ??
-                                                                    '--',
-                                                              ),
-                                                              CommonRichText(
-                                                                label:
-                                                                    "Price: ",
-                                                                value: product[
-                                                                        "price"] ??
-                                                                    '--',
-                                                              ),
-                                                            ]),
-                                                        // Check if the customerId is not empty
-                                                        if (widget.customerId
-                                                                ?.isNotEmpty ??
-                                                            false)
-                                                          Row(
-                                                            children: [
-                                                              GestureDetector(
-                                                                onTap: () =>
-                                                                    decrementQuantity(
-                                                                        index),
-                                                                child:
-                                                                    Container(
-                                                                  height: 26,
-                                                                  width: 35,
-                                                                  decoration: BoxDecoration(
-                                                                      color: Colors
-                                                                          .orange
-                                                                          .withOpacity(
-                                                                              0.2),
-                                                                      borderRadius:
-                                                                          BorderRadius.circular(
-                                                                              15)),
-                                                                  // backgroundColor: selectedQty.value > 0
-                                                                  //     ? AppColors.mainblue
-                                                                  //     : Colors.grey,
-                                                                  child:
-                                                                      Padding(
-                                                                    padding: const EdgeInsets
-                                                                        .symmetric(
-                                                                        horizontal:
-                                                                            0,
-                                                                        vertical:
-                                                                            0),
-                                                                    child: cartController.isLoading1.value ==
-                                                                            false
-                                                                        ? const Icon(
-                                                                            Icons.remove,
-                                                                            size:
-                                                                                17,
-                                                                            color:
-                                                                                Colors.orange,
-                                                                          )
-                                                                        : Padding(
-                                                                            padding:
-                                                                                const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                                                            child:
-                                                                                CircularProgressIndicator(
-                                                                              color: Color.fromARGB(255, 255, 123, 0),
-                                                                              strokeWidth: 2,
-                                                                            ),
-                                                                          ),
-                                                                  ),
-                                                                ),
-                                                              ),
-                                                              SizedBox(
-                                                                width: 40,
-                                                                child:
-                                                                    TextField(
-                                                                  controller:
-                                                                      qtyControllers[
-                                                                          index],
-                                                                  textAlign:
-                                                                      TextAlign
-                                                                          .center,
-                                                                  readOnly:
-                                                                      true,
-                                                                      style: TextStyle(fontWeight: FontWeight.bold),
-                                                                ),
-                                                              ),
-                                                              GestureDetector(
-                                                                onTap: () =>
-                                                                    incrementQuantity(
-                                                                        index),
-                                                                child:
-                                                                    Container(
-                                                                  height: 26,
-                                                                  width: 35,
-                                                                  decoration: BoxDecoration(
-                                                                      color: Colors
-                                                                          .orange
-                                                                          .withOpacity(
-                                                                              0.2),
-                                                                      borderRadius:
-                                                                          BorderRadius.circular(
-                                                                              15)),
-                                                                  // backgroundColor: selectedQty.value > 0
-                                                                  //     ? AppColors.mainblue
-                                                                  //     : Colors.grey,
-                                                                  child:
-                                                                      Padding(
-                                                                    padding: const EdgeInsets
-                                                                        .symmetric(
-                                                                        horizontal:
-                                                                            0,
-                                                                        vertical:
-                                                                            0),
-                                                                    child: cartController.isLoading1.value ==
-                                                                            false
-                                                                        ? const Icon(
-                                                                            Icons.add,
-                                                                            size:
-                                                                                17,
-                                                                            color:
-                                                                                Colors.orange,
-                                                                          )
-                                                                        : Padding(
-                                                                            padding:
-                                                                                const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                                                            child:
-                                                                                CircularProgressIndicator(
-                                                                              color: Color.fromARGB(255, 255, 123, 0),
-                                                                              strokeWidth: 2,
-                                                                            ),
-                                                                          ),
-                                                                  ),
-                                                                ),
-                                                              ),
-                                                            ],
+                                                      ),
+                                                      SizedBox(height: 4),
+                                                      Text(
+                                                        product['item_desc'] ??
+                                                            'Null',
+                                                        maxLines: 2,
+                                                        overflow: TextOverflow
+                                                            .ellipsis,
+                                                        style: const TextStyle(
+                                                          fontSize: 11,
+                                                          fontWeight:
+                                                              FontWeight.bold,
+                                                          color: Colors.black,
+                                                        ),
+                                                      ),
+                                                      SizedBox(height: 8),
+                                                      Row(
+                                                        mainAxisAlignment:
+                                                            MainAxisAlignment
+                                                                .spaceBetween,
+                                                        children: [
+                                                          CommonRichText(
+                                                            label: "UoM: ",
+                                                            value: product[
+                                                                    "uom_code"] ??
+                                                                '--',
                                                           ),
-                                                      ],
-                                                    ),
+                                                          CommonRichText(
+                                                            label: "GST: ",
+                                                            value: product[
+                                                                    "gst_rate"] ??
+                                                                '--',
+                                                          ),
+                                                          CommonRichText(
+                                                            label: "Price: ",
+                                                            value: product[
+                                                                    "price"] ??
+                                                                '--',
+                                                          ),
+                                                        ],
+                                                      ),
+                                                      if (widget.customerId
+                                                              ?.isNotEmpty ??
+                                                          false)
+                                                        Row(
+                                                          children: [
+                                                            GestureDetector(
+                                                              onTap: () =>
+                                                                  decrementQuantity(
+                                                                      index),
+                                                              child: Container(
+                                                                height: 26,
+                                                                width: 35,
+                                                                decoration:
+                                                                    BoxDecoration(
+                                                                  color: Colors
+                                                                      .orange
+                                                                      .withOpacity(
+                                                                          0.2),
+                                                                  borderRadius:
+                                                                      BorderRadius
+                                                                          .circular(
+                                                                              15),
+                                                                ),
+                                                                child: cartController
+                                                                            .isLoading1
+                                                                            .value ==
+                                                                        false
+                                                                    ? const Icon(
+                                                                        Icons
+                                                                            .remove,
+                                                                        size:
+                                                                            17,
+                                                                        color: Colors
+                                                                            .orange,
+                                                                      )
+                                                                    : Padding(
+                                                                        padding: const EdgeInsets
+                                                                            .symmetric(
+                                                                            horizontal:
+                                                                                8,
+                                                                            vertical:
+                                                                                4),
+                                                                        child:
+                                                                            CircularProgressIndicator(
+                                                                          color: Color.fromARGB(
+                                                                              255,
+                                                                              255,
+                                                                              123,
+                                                                              0),
+                                                                          strokeWidth:
+                                                                              2,
+                                                                        ),
+                                                                      ),
+                                                              ),
+                                                            ),
+                                                            SizedBox(
+                                                              width: 40,
+                                                              child: qtyControllers
+                                                                          .length >
+                                                                      index
+                                                                  ? TextField(
+                                                                      controller:
+                                                                          qtyControllers[
+                                                                              index],
+                                                                      textAlign:
+                                                                          TextAlign
+                                                                              .center,
+                                                                      readOnly:
+                                                                          true,
+                                                                      style: TextStyle(
+                                                                          fontWeight:
+                                                                              FontWeight.bold),
+                                                                    )
+                                                                  : null
+                                                            ),
+                                                            GestureDetector(
+                                                              onTap: () =>
+                                                                  incrementQuantity(
+                                                                      index),
+                                                              child: Container(
+                                                                height: 26,
+                                                                width: 35,
+                                                                decoration:
+                                                                    BoxDecoration(
+                                                                  color: Colors
+                                                                      .orange
+                                                                      .withOpacity(
+                                                                          0.2),
+                                                                  borderRadius:
+                                                                      BorderRadius
+                                                                          .circular(
+                                                                              15),
+                                                                ),
+                                                                child: cartController
+                                                                            .isLoading1
+                                                                            .value ==
+                                                                        false
+                                                                    ? const Icon(
+                                                                        Icons
+                                                                            .add,
+                                                                        size:
+                                                                            17,
+                                                                        color: Colors
+                                                                            .orange,
+                                                                      )
+                                                                    : Padding(
+                                                                        padding: const EdgeInsets
+                                                                            .symmetric(
+                                                                            horizontal:
+                                                                                8,
+                                                                            vertical:
+                                                                                4),
+                                                                        child:
+                                                                            CircularProgressIndicator(
+                                                                          color: Color.fromARGB(
+                                                                              255,
+                                                                              255,
+                                                                              123,
+                                                                              0),
+                                                                          strokeWidth:
+                                                                              2,
+                                                                        ),
+                                                                      ),
+                                                              ),
+                                                            ),
+                                                          ],
+                                                        ),
+                                                    ],
                                                   ),
-                                                ],
-                                              ),
-                                            ],
-                                          ),
+                                                ),
+                                              ],
+                                            ),
+                                          ],
                                         ),
                                       ),
-                                    ));
-                                  });
-                            }
-                          })),
+                                    ),
+                                  ),
+                                );
+                              },
+                            );
+                          }
+                        }),
+                      ),
                     );
             }),
-            Obx(() => cartController.isLoading1.value
-                ? Positioned.fill(
-                    child: Container(
-                      color: Colors.black54, // Semi-transparent background
-                      child: Center(child: CircularProgressIndicator()),
-                    ),
-                  )
-                : SizedBox.shrink()),
-          ]),
-          // floatingActionButton:
-          // _isAnyQuantityValid() // Check if any quantities are valid
-          //     ? FloatingActionButton.extended(
-          //   backgroundColor: AppColors.mainblue,
-          //   onPressed: () {
-          //     Get.back(); // Navigate back if any quantity is valid
-          //   },
-          //   label: Text(
-          //     'Continue',
-          //     style: TextStyle(color: Colors.white),
-          //   ),
-          // )
-          //     : null,
-        ],
-      ),
+
+
+          ],
+        ),
+        // Obx(() => cartController.isLoading1.value
+        //     ? Positioned.fill(
+        //         child: Container(
+        //           color: Colors.black54, // Semi-transparent background
+        //           child: Center(child: CircularProgressIndicator()),
+        //         ),
+        //       )
+        //     : null,
+      ]),
+
+      floatingActionButton:
+      _isAnyQuantityValid() // Check if any quantities are valid
+          ?
+
+      FloatingActionButton.extended(
+        // Padding(
+        //   padding: const EdgeInsets.all(8.0),
+        //   child: Text(
+        //     'Total Quantity: ${_calculateTotalQuantity()}',
+        //     style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        //   ),
+        // ),
+        backgroundColor: Colors.orange,
+        onPressed: () {
+          Get.back(); // Navigate back if any quantity is valid
+        },
+        label: Text(
+          'Continue',
+          style: TextStyle(color: Colors.white),
+        ),
+      )
+          : null,
     );
   }
 }

@@ -12,6 +12,7 @@ class URLConst {
 
   static const getuser_cart = "get-quotation-cart/";
   static const create_quatation = "create-quotation/";
+  static const quatations_list = "get-quotations?draw=1&length=10&start=0&branch_count=10&status=1&search_quotation";
 
 
 

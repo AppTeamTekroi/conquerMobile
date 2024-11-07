@@ -162,11 +162,13 @@ class CartDataSourceImpl implements CartRepository {
   @override
   Future<Either<Failure, dynamic>> OrderStore (BuildContext context,body,customerId) async {
 try{
-    final url = Uri.parse(URLConst.baseURL+URLConst.create_quatation+'$customerId');
+  final headers = await ApiHelper.getHeaders();
+
+  final url = Uri.parse(URLConst.baseURL+URLConst.create_quatation);
 
     final response = await http.post(
       url,
-      headers: {'Content-Type': 'application/json'},
+      headers: headers,
       body: json.encode(body),
     );
 
