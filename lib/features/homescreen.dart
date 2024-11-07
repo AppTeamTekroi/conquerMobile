@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:vconquer/features/customers/customer_screen.dart';
+import 'package:vconquer/features/orderlist/order_page.dart';
 import 'package:vconquer/features/products/Products.dart';
 import 'dart:math';
 
@@ -11,6 +12,7 @@ import 'package:get/get.dart';
 
 import '../login/controller/login_controller.dart';
 import '../login/presentation/loginScreen.dart';
+import 'Quatation/new_quatation_page.dart';
 import 'Quatation/quatation_page.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -29,26 +31,21 @@ class _HomeScreenState extends State<HomeScreen> {
   ];
   List<String> names = [
     'Quatation',
-    'Order List',
-    'Invoice',
     'Orders',
+    'Invoice',
     'Credit Note',
-    'Purchase Order',
-    'Expenses order',
-    'Pro-Forma',
-    'Indirect Income'
+    'Aging',
   ];
   List<IconData> icons = [
     Icons.shopping_cart_outlined,
-    Icons.receipt,
-    Icons.receipt_long,
-    // Icons.receipt_long,
     Icons.local_shipping_outlined,
+    Icons.receipt_long,
     Icons.credit_score_outlined,
-    Icons.bookmark_border_outlined,
-    Icons.account_balance_wallet_outlined,
-    Icons.calculate_outlined,
+   // Icons.bookmark_border_outlined,
     Icons.money,
+
+    // Icons.account_balance_wallet_outlined,
+    // Icons.calculate_outlined,
   ];
 
   List<double> iconSizes = [
@@ -57,10 +54,10 @@ class _HomeScreenState extends State<HomeScreen> {
     40.0,
     43.0,
     40.0,
-    40.0,
-    40.0,
-    40.0,
-    40.0
+    // 40.0,
+    // 40.0,
+    // 40.0,
+    // 40.0
   ];
   bool _dialogShown = false;
   late ScrollController _scrollController;
@@ -80,11 +77,13 @@ class _HomeScreenState extends State<HomeScreen> {
         });
       });
   }
+
   @override
   void dispose() {
     _scrollController.dispose();
     super.dispose();
   }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -92,6 +91,7 @@ class _HomeScreenState extends State<HomeScreen> {
         controller: _scrollController,
         slivers: [
           SliverAppBar(
+            automaticallyImplyLeading: false,
             expandedHeight: kExpandedHeight,
             pinned: true,
             backgroundColor: _appBarColor, // Use the dynamic color
@@ -157,24 +157,18 @@ class _HomeScreenState extends State<HomeScreen> {
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
-                                onPressed: () async{
+                                onPressed: () async {
                                   await lc.logOutUser();
-                              final SharedPreferences _prefs =
-                               await SharedPreferences.getInstance();
-    _prefs.setString('token', '');
+                                  final SharedPreferences _prefs =
+                                      await SharedPreferences.getInstance();
+                                  _prefs.setString('token', '');
 
-    String? access_token =
-    _prefs.getString('access_token');
-    print(
-    'Access Token after clearing: $access_token');
-    Get.offAll(() => const LoginScreen());
-    },
-
-
-
-
-
-
+                                  String? access_token =
+                                      _prefs.getString('access_token');
+                                  print(
+                                      'Access Token after clearing: $access_token');
+                                  Get.offAll(() => const LoginScreen());
+                                },
                               ),
                               TextButton(
                                 child: const Text(
@@ -217,12 +211,13 @@ class _HomeScreenState extends State<HomeScreen> {
                     padding: const EdgeInsets.symmetric(horizontal: 20.0),
                     child: Column(
                       children: [
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child:
-                        Text('➤ PERFORMANCE OVERVIEW',style: TextStyle(color: Colors.green[900]),
-                  ),
-                      ),
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            '➤  OVERVIEW',
+                            style: TextStyle(color: Colors.green[900]),
+                          ),
+                        ),
                         SizedBox(
                           height: 8,
                         ),
@@ -348,8 +343,9 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                         Align(
                           alignment: Alignment.centerLeft,
-                          child:
-                          Text('✦ FEATURES ✦',style: TextStyle(color: Colors.green[900]),
+                          child: Text(
+                            '✦ CAPABILITIES ✦',
+                            style: TextStyle(color: Colors.green[900]),
                           ),
                         ),
                         SizedBox(
@@ -360,50 +356,47 @@ class _HomeScreenState extends State<HomeScreen> {
                         //   style: TextStyle(color: Colors.green[900]),
                         // ),
                         Container(
-                          // height: 160,
                           decoration: BoxDecoration(
                               color: Colors.white,
                               borderRadius: BorderRadius.circular(16)),
                           child: Padding(
-                            padding: const EdgeInsets.all(4.0),
+                            padding: const EdgeInsets.all(5.0),
                             child: GridView.builder(
+                              padding: EdgeInsets.zero,
                               shrinkWrap: true,
                               physics: NeverScrollableScrollPhysics(),
                               gridDelegate:
                                   SliverGridDelegateWithFixedCrossAxisCount(
                                 crossAxisCount: 4,
-                                mainAxisExtent: 112,
+                                mainAxisExtent: 92,
                                 crossAxisSpacing: 0.0,
                                 mainAxisSpacing: 0.0,
                               ),
                               // itemCount: pc.productDataList[0].listings!.length,
-                              itemCount: 9,
+                              itemCount: 5,
                               itemBuilder: (context, index) => SizedBox(
-                                height: 100,
+                                height: 70,
                                 child: Padding(
                                   padding: const EdgeInsets.symmetric(
                                       horizontal: 4.0),
                                   child: GestureDetector(
                                     onTap: () {
                                       if (index == 0) {
-                                        Get.off(()=> QuotationScreen());
+                                        Get.to(() => QuatationScreen());
                                       }
                                       if (index == 1) {
-                                      // Get.off(()=> CustomerScreen(fromQuotation: false,));
+                                       //  Get.off(()=> OrderPlacedScreen());
                                       }
                                       if (index == 2) {
-                                      //  Get.off(()=> Products());
+                                        //  Get.off(()=> Products());
                                       }
 
                                       if (index == 3) {}
                                       if (index == 4) {}
-                                      if (index == 5) {}
-                                      if (index == 6) {}
-                                      if (index == 7) {}
-                                      if (index == 8) {}
-                                      },
+
+                                    },
                                     child: Container(
-                                      height: 100,
+                                     height: 70,
                                       decoration: BoxDecoration(
                                           borderRadius:
                                               BorderRadius.circular(15),
