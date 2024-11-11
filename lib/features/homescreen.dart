@@ -14,6 +14,7 @@ import '../login/controller/login_controller.dart';
 import '../login/presentation/loginScreen.dart';
 import 'Quatation/new_quatation_page.dart';
 import 'Quatation/quatation_page.dart';
+import 'Quatation/quatationlst_Screen.dart';
 
 class HomeScreen extends StatefulWidget {
   @override
@@ -382,10 +383,13 @@ class _HomeScreenState extends State<HomeScreen> {
                                   child: GestureDetector(
                                     onTap: () {
                                       if (index == 0) {
-                                        Get.to(() => QuatationScreen());
+                                       // Get.to(() => NewQuotationScreen());
+
+                                        Get.to(() => QuatationListScreen());
+
                                       }
                                       if (index == 1) {
-                                       //  Get.off(()=> OrderPlacedScreen());
+                                         Get.to(()=> QuatationScreen());
                                       }
                                       if (index == 2) {
                                         //  Get.off(()=> Products());

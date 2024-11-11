@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
 
@@ -14,7 +15,8 @@ import '../cart/cart_controller.dart';
 
 class Products extends StatefulWidget {
   final String? customerId;
-  const Products({Key? key, this.customerId = ""}) : super(key: key);
+  final String? cardCode;
+  const Products({Key? key, this.customerId = "",this.cardCode = ""}) : super(key: key);
 
   @override
   State<Products> createState() => _ProductsState();
@@ -27,6 +29,7 @@ class _ProductsState extends State<Products> {
   final List<TextEditingController> qtyControllers = [];
   String filter = "";
   var isEditing = false;
+  String dropdownValue = 'Select SQ';
 
   @override
   void initState() {
@@ -37,7 +40,7 @@ class _ProductsState extends State<Products> {
   Future<void> _fetchProducts() async {
     await productController.fetchproducts(context);
     if (widget.customerId != null) {
-      await cartController.fetchcartlist(context, widget.customerId!);
+     // await cartController.fetchcartlist(context, widget.customerId!);
     }
 
     final dataList = productController.productList.value;
@@ -82,14 +85,52 @@ class _ProductsState extends State<Products> {
       }
     });
   }
+
   void _updateCart(int index) {
-  final product = productController.productList[index];
-  cartController.addToCart(
-  context,
-  product["id"].toString(),
-  quantities[index].value,
-  widget.customerId!,
-  );
+    print(widget.cardCode);
+    try {
+      if (widget.customerId == null) {
+        Fluttertoast.showToast(
+          msg: "Please Select Customer",
+          toastLength: Toast.LENGTH_SHORT,
+          gravity: ToastGravity.CENTER,
+          backgroundColor: Colors.orange.shade100,
+          textColor: Colors.black,
+          fontSize: 16.0,
+        );
+        return;
+      }
+      final product = productController.productList[index];
+      final response = cartController.addToCart(
+        context,
+        product["id"].toString(),
+        quantities[index].value,
+        widget.customerId!,
+        widget.cardCode!,
+      );
+      var decodedValue = response;
+      // if (decodedValue['success'] == true) {
+      //   Fluttertoast.showToast(
+      //     msg: "Your order was placed successfully",
+      //     toastLength: Toast.LENGTH_SHORT,
+      //     gravity: ToastGravity.CENTER,
+      //     backgroundColor: Colors.green.shade100,
+      //     textColor: Colors.black,
+      //     fontSize: 16.0,
+      //   );
+      //   // Get.off(() => OrderPlacedScreen());
+      // } else {
+      //   Fluttertoast.showToast(
+      //     msg: response['message'] ??
+      //         "Something went wrong. Please try again.",
+      //     toastLength: Toast.LENGTH_SHORT,
+      //     gravity: ToastGravity.CENTER,
+      //     backgroundColor: Colors.red.shade100,
+      //     textColor: Colors.black,
+      //     fontSize: 16.0,
+      //   );
+      // }
+    } catch (e) {}
   }
 
   int _calculateTotalQuantity() {
@@ -129,11 +170,29 @@ class _ProductsState extends State<Products> {
                 hintText: "Search Products",
                 hintStyle: TextStyle(fontSize: 18, fontWeight: FontWeight.w400),
                 border: InputBorder.none,
+                suffixIcon: Obx(
+                      () => productController.filteredList.isNotEmpty
+                      ? Padding(
+                    padding: const EdgeInsets.only(top: 15),
+                    child: Padding(
+                      padding: const EdgeInsets.only(left: 8, right: 8),
+                      child: Text(
+                        'Search',
+                        style: TextStyle(fontSize: 15),
+                      ),
+                    ),
+                  )
+                      : Icon(
+                    Icons.search,
+                    color: Colors.grey,
+                  ),
+                ),
+
               ),
               onChanged: (val) {
-                // pc.searchProduct.value = val;
-                // pc.searchProductByName(pc.searchProduct.value);
-              },
+                print(';hitting in page');
+                productController.searchProductByName(val);
+                },
             ),
           ),
         ),
@@ -296,24 +355,31 @@ class _ProductsState extends State<Products> {
                                 child:
                                     Text(productController.errorMessage.value));
                           } else {
-                            final dataList =
-                                productController.productList.value;
+                           // final dataList = productController.filteredList;
 
-                            if (dataList.isEmpty) {
+                            // if (dataList.isEmpty) {
+                            //   return Center(
+                            //     child: Text(
+                            //       'No Products Available', // Display "0" or a custom empty message
+                            //       style: TextStyle(
+                            //           fontSize: 18,
+                            //           fontWeight: FontWeight.bold),
+                            //     ),
+                            //   );
+                            // }
+                            if (productController.filteredList.isEmpty) {
                               return Center(
                                 child: Text(
-                                  'No Products Available', // Display "0" or a custom empty message
-                                  style: TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold),
+                                  'No Products Found',
+                                  style: TextStyle(fontSize: 18),
                                 ),
                               );
                             }
 
                             return ListView.builder(
-                              itemCount: dataList.length,
+                              itemCount: productController.filteredList.length,
                               itemBuilder: (context, index) {
-                                final product = dataList[index];
+                                final product = productController.filteredList[index];
 
                                 return IntrinsicHeight(
                                   child: Card(
@@ -394,13 +460,40 @@ class _ProductsState extends State<Products> {
                                                                 '--',
                                                           ),
                                                           CommonRichText(
-                                                            label: "Price: ",
+                                                            label: "Stock: ",
                                                             value: product[
-                                                                    "price"] ??
+                                                            "in_stock"] ??
                                                                 '--',
                                                           ),
                                                         ],
                                                       ),
+                                                  SizedBox(height: 5),
+                                                  // Row(
+                                                  //   mainAxisAlignment:
+                                                  //   MainAxisAlignment
+                                                  //       .spaceBetween,
+                                                  //   children: [
+                                                  //     CommonRichText(
+                                                  //       label: "Price : ",
+                                                  //       value: product[
+                                                  //       "price"] ??
+                                                  //           '--',
+                                                  //     ),
+                                                  //     CommonRichText(
+                                                  //       label: "HSN : ",
+                                                  //       value: product[
+                                                  //       "hsn_code"] ??
+                                                  //           '--',
+                                                  //     ),
+                                                  //     CommonRichText(
+                                                  //       label: "Stock: ",
+                                                  //       value: product[
+                                                  //       "in_stock"] ??
+                                                  //           '--',
+                                                  //     ),
+                                                  //   ],
+                                                  // ),
+
                                                       if (widget.customerId
                                                               ?.isNotEmpty ??
                                                           false)
@@ -561,10 +654,8 @@ class _ProductsState extends State<Products> {
       ]),
 
       floatingActionButton:
-      _isAnyQuantityValid() // Check if any quantities are valid
-          ?
-
-      FloatingActionButton.extended(
+      (_isAnyQuantityValid() &  (widget.customerId !=null))
+          ? FloatingActionButton.extended(
         // Padding(
         //   padding: const EdgeInsets.all(8.0),
         //   child: Text(
@@ -574,7 +665,7 @@ class _ProductsState extends State<Products> {
         // ),
         backgroundColor: Colors.orange,
         onPressed: () {
-          Get.back(); // Navigate back if any quantity is valid
+          Get.back();
         },
         label: Text(
           'Continue',

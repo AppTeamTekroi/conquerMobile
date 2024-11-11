@@ -12,7 +12,29 @@ class CustomerController extends GetxController {
   var customersID = {}.obs;
   var errorMessage1 = ''.obs;
   var isLoading1 = false.obs;
+  var filteredcust = [].obs;
+   var customerslist = [].obs;
+  void searchProductByName(String query) {
+    print(';hitting in controller: $query');
 
+    if (query.isEmpty) {
+      filteredcust.value = customerslist;
+    } else {
+      filteredcust.value = customerslist.where((product) {
+        final itemNo = product['web_id']?.toString().toLowerCase() ?? '';
+        return itemNo.contains(query.toLowerCase());
+      }).toList();
+    }
+
+    filteredcust.refresh(); // Force the UI to refresh
+    update(); // Notify GetX to update the UI
+
+    // Print the filtered list for debugging
+    print('Filtered List Length: ${filteredcust.length}');
+    for (var product in filteredcust) {
+      print('Product Item No: ${product['item_no']}');
+    }
+  }
 
   @override
   Future<void> fetchUser(BuildContext context) async {
@@ -26,7 +48,10 @@ class CustomerController extends GetxController {
       },
               (responseData) {
             customers.value = responseData;
-            print('***********Duty data successfully fetched in controller');
+            customerslist.value = responseData['data'];
+            filteredcust.value = responseData['data'];
+
+            // print('***********Duty data successfully fetched in controller');
             errorMessage.value = '';
             isLoading.value = false;
           }
@@ -47,7 +72,7 @@ class CustomerController extends GetxController {
       },
               (responseData) {
             customersID.value = responseData;
-            print('***********ID data successfully fetched in controller');
+           // print('***********ID data successfully fetched in controller');
             errorMessage1.value = '';
             isLoading1.value = false;
           }

@@ -273,10 +273,14 @@ class _LoginScreenState extends State<LoginScreen> {
                                             response['access_token'] !=
                                                 null) {
                                           loginController.token = response['access_token'];
+                                          loginController.branch = response['branch_name'];
+
                                           print("${response['access_token']}");
                                           final SharedPreferences _prefs =
                                           await SharedPreferences.getInstance();
                                           _prefs.setString('token', loginController.token);
+
+                                          _prefs.setString('branch', loginController.branch);
 
                                           loginController.usernameController
                                               .clear();

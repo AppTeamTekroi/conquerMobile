@@ -18,6 +18,7 @@ class LoginController extends GetxController {
   var isLogin = false.obs;
   var UserName = "".obs;
   var token = '';
+  var branch = '';
   void togglePasswordVisibility() {
     isPasswordVisible.toggle();
   }
@@ -32,6 +33,8 @@ class LoginController extends GetxController {
     final prefs = await SharedPreferences.getInstance();
     isLogin.value = prefs.getBool('isLogin') ?? false;
     token = prefs.getString("access_token") ?? '';
+    branch = prefs.getString("branch_name") ?? '';
+
     print("token in pref $token");
 
   }
@@ -76,6 +79,7 @@ class LoginController extends GetxController {
   Future<void> logOutUser() async {
     isLogin.value = false;
     token = '';
+    branch = '';
     await saveLoginState();
     Get.off(() => const LoginScreen());
   }
@@ -85,8 +89,12 @@ class LoginController extends GetxController {
     prefs.setBool('isLogin', isLogin.value);
     if (isLogin.value) {
       prefs.setString('token', token);
+      prefs.setString('branch', branch);
+
     } else {
       prefs.remove('token');
+      prefs.remove('branch');
+
     }
   }
 

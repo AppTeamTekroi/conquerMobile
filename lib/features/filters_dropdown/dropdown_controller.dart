@@ -7,23 +7,46 @@ class DropdownController extends GetxController {
   final DropdownSourceImpl dropdownSourceImpl = DropdownSourceImpl();
   var isLoading = false.obs;
   var errorMessage = ''.obs;
-  var branch = {}.obs;
-  var categories = {}.obs;
-  var subCategories = {}.obs;
-  var salesEmpName = {}.obs;
-  var countries = {}.obs;
-  var searchByGstin = {}.obs;
+  var branch = [].obs;
+  var categories = [].obs;
+  var subCategories = [].obs;
+  var salesEmpName = [].obs;
+  var countries = [].obs;
+  var searchByGstin = [].obs;
   var errorMessage1 = ''.obs;
   var errorMessage2 = ''.obs;
   var errorMessage3= ''.obs;
   var errorMessage4 = ''.obs;
   var errorMessage5 = ''.obs;
-
   var isLoading1 = false.obs;
   var isLoading2 = false.obs;
   var isLoading3 = false.obs;
   var isLoading4 = false.obs;
   var isLoading5 = false.obs;
+
+  var contact = [].obs;
+  var isLoading6 = false.obs;
+  var errorMessage6 = ''.obs;
+
+  var shipping = [].obs;
+  var isLoading7 = false.obs;
+  var errorMessage7 = ''.obs;
+
+  var billing = [].obs;
+  var isLoading8 = false.obs;
+  var errorMessage8 = ''.obs;
+
+
+
+  var payterm = [].obs;
+  var isLoading9 = false.obs;
+  var errorMessage9 = ''.obs;
+
+
+
+
+
+
   @override
   Future<void> fetchbranches(BuildContext context) async {
     print('fetching 1 api');
@@ -35,7 +58,7 @@ class DropdownController extends GetxController {
         errorMessage.value = 'Error: ${failure.message}';
       },
               (responseData) {
-                branch.value = responseData;
+            branch.value = responseData;
             print('***********Duty data successfully fetched in controller');
             errorMessage.value = '';
             isLoading.value = false;
@@ -161,5 +184,92 @@ class DropdownController extends GetxController {
       errorMessage5.value = 'An error occurred: ${e.toString()};';
     }
   }
-
+  @override
+  Future<void> fetchcontact(BuildContext context,String customerId) async {
+    print('fetching 1 api');
+    try {
+      isLoading6.value = true;
+      final result = await dropdownSourceImpl.fectchcontact(context,customerId);
+      result.fold((failure) {
+        isLoading6.value = false;
+        errorMessage6.value = 'Error: ${failure.message}';
+      },
+              (responseData) {
+            contact.value = responseData;
+           // print('***********contact data successfully fetched in controller');
+            errorMessage6.value = '';
+            isLoading6.value = false;
+          }
+      );
+    } catch (e) {
+      isLoading6.value = false;
+      errorMessage6.value = 'An error occurred: ${e.toString()};';
+    }
+  }
+  @override
+  Future<void> fetchshipping(BuildContext context,String customerId) async {
+    print('fetching 1 api');
+    try {
+      isLoading7.value = true;
+      final result = await dropdownSourceImpl.shippingaddress(context,customerId);
+      result.fold((failure) {
+        isLoading7.value = false;
+        errorMessage7.value = 'Error: ${failure.message}';
+      },
+              (responseData) {
+            shipping.value = responseData;
+           // print('***********shipping data successfully fetched in controller');
+            errorMessage7.value = '';
+            isLoading7.value = false;
+          }
+      );
+    } catch (e) {
+      isLoading7.value = false;
+      errorMessage7.value = 'An error occurred: ${e.toString()};';
+    }
+  }
+  @override
+  Future<void> fetchbilling(BuildContext context,String customerId) async {
+    print('fetching 1 api');
+    try {
+      isLoading8.value = true;
+      final result = await dropdownSourceImpl.billingaddress(context,customerId);
+      result.fold((failure) {
+        isLoading8.value = false;
+        errorMessage8.value = 'Error: ${failure.message}';
+      },
+              (responseData) {
+            billing.value = responseData;
+            print('***********billing data successfully fetched in controller$responseData');
+            errorMessage8.value = '';
+            isLoading8.value = false;
+          }
+      );
+    } catch (e) {
+      isLoading8.value = false;
+      errorMessage8.value = 'An error occurred: ${e.toString()};';
+    }
+  }
+  @override
+  Future<void> fetchpayterm(BuildContext context) async {
+    print('fetching 1 api');
+    try {
+      isLoading9.value = true;
+      final result = await dropdownSourceImpl.Paymentaddress(context);
+      result.fold((failure) {
+        isLoading9.value = false;
+        errorMessage9.value = 'Error: ${failure.message}';
+      },
+              (responseData) {
+            payterm.value = responseData;
+           // print('***********pay data successfully fetched in controller');
+            errorMessage9.value = '';
+            isLoading9.value = false;
+          }
+      );
+    } catch (e) {
+      isLoading9.value = false;
+      errorMessage9.value = 'An error occurred: ${e.toString()};';
+    }
+  }
 }

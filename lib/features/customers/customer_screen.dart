@@ -15,7 +15,6 @@ class CustomerScreen extends StatefulWidget {
   final bool fromQuotation;
 
   const CustomerScreen({super.key, required this.fromQuotation});
-
   @override
   State<CustomerScreen> createState() => _CustomerScreenState();
 }
@@ -58,39 +57,57 @@ class _CustomerScreenState extends State<CustomerScreen> {
                 hintText: "Search Customers",
                 hintStyle: TextStyle(fontSize: 18, fontWeight: FontWeight.w400),
                 border: InputBorder.none,
+                suffixIcon: Obx(
+                  () => customerController.filteredcust.isNotEmpty
+                      ? Padding(
+                          padding: const EdgeInsets.only(top: 15),
+                          child: Padding(
+                            padding: const EdgeInsets.only(left: 8, right: 8),
+                            child: Text(
+                              'Search',
+                              style: TextStyle(fontSize: 15),
+                            ),
+                          ),
+                        )
+                      : Icon(
+                          Icons.search,
+                          color: Colors.grey,
+                        ),
+                ),
+
               ),
               onChanged: (val) {
-                // pc.searchProduct.value = val;
-                // pc.searchProductByName(pc.searchProduct.value);
+                print(';hitting in page');
+                customerController.searchProductByName(val);
               },
             ),
           ),
+          // actions: [
+          //  // if (widget.customerId != null)
+          //     Padding(
+          //       padding: const EdgeInsets.only(right: 15),
+          //       child: GestureDetector(
+          //         child: FaIcon(
+          //           FontAwesomeIcons.barcode,
+          //           color: Colors.black,
+          //         ),
+          //       ),
+          //     ),
+          //  // if (widget.customerId != null)
+          //     Padding(
+          //       padding: const EdgeInsets.only(right: 10),
+          //       child: GestureDetector(
+          //         onTap: () {
+          //           //   Get.to(() => CartScreen(customerId: widget.customerId));
+          //         },
+          //         child: Icon(
+          //           Icons.shopping_cart_outlined,
+          //           color: Colors.black,
+          //         ),
+          //       ),
+          //     ),
+          // ],
         ),
-        // actions: [
-        //  // if (widget.customerId != null)
-        //     Padding(
-        //       padding: const EdgeInsets.only(right: 15),
-        //       child: GestureDetector(
-        //         child: FaIcon(
-        //           FontAwesomeIcons.barcode,
-        //           color: Colors.black,
-        //         ),
-        //       ),
-        //     ),
-        //  // if (widget.customerId != null)
-        //     Padding(
-        //       padding: const EdgeInsets.only(right: 10),
-        //       child: GestureDetector(
-        //         onTap: () {
-        //           //   Get.to(() => CartScreen(customerId: widget.customerId));
-        //         },
-        //         child: Icon(
-        //           Icons.shopping_cart_outlined,
-        //           color: Colors.black,
-        //         ),
-        //       ),
-        //     ),
-        // ],
       ),
       body: Column(
         children: [
@@ -199,21 +216,27 @@ class _CustomerScreenState extends State<CustomerScreen> {
                 return Center(
                     child: Text(customerController.errorMessage.value));
               } else {
-                final dataList = customerController.customers.value;
-                final list = dataList is Map<dynamic, dynamic> ? dataList : {};
-                final employeeOnDuty =
-                    list["data"] is List<dynamic> ? list["data"] : [];
+                if (customerController.filteredcust.isEmpty) {
+                  return Center(
+                    child: Text(
+                      'No Products Found',
+                      style: TextStyle(fontSize: 18),
+                    ),
+                  );
+                }
                 return ListView.builder(
-                  itemCount: employeeOnDuty.length,
+                  itemCount: customerController.filteredcust.length,
                   itemBuilder: (context, index) {
-                    final item = employeeOnDuty[index] as Map<String, dynamic>;
+                    final item = customerController.filteredcust[index];
                     final int itemId = item['id'];
                     return GestureDetector(
                       onTap: () {
                         if (widget.fromQuotation) {
                           Get.back(result: {
                             'id': item['id'],
-                            'name': item['card_name']
+                            'name': item['card_name'],
+                            'cardcode': item['web_id'],
+                            'email':item['e_mail']
                           });
                         }
                       },
