@@ -1,19 +1,25 @@
+import 'package:dropdown_search/dropdown_search.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:vconquer/features/Quatation/quatationlst_Screen.dart';
 import 'package:vconquer/features/customers/customer_controller.dart';
 import 'package:vconquer/features/customers/customer_screen.dart';
+import 'package:vconquer/features/filters_dropdown/dropdown_controller.dart';
 import 'package:vconquer/features/homescreen.dart';
 import 'package:vconquer/features/navBar.dart';
 import 'package:vconquer/features/products/Products.dart';
+import 'package:vconquer/ui/CommonWidget.dart';
 import '../../ui/Buttons/buttonBS.dart';
 import '../../ui/color/appColor.dart';
 import '../../ui/richtext.dart';
 import '../../ui/textfieldWidget.dart';
 
 import '../cart/cart_controller.dart';
+import '../products/Product_QuatScreen.dart';
 import '../products/product_controller.dart';
 
 class NewQuotationScreen extends StatefulWidget {
@@ -26,23 +32,92 @@ class NewQuotationScreen extends StatefulWidget {
 class _QuotationScreenState extends State<NewQuotationScreen> {
   bool isExpanded = false;
   ProductController pc = Get.put(ProductController());
+  DropdownController dc = Get.put(DropdownController());
+  final TextEditingController _dateController = TextEditingController();
+  final TextEditingController remarks = TextEditingController();
+  final TextEditingController deliveryterms = TextEditingController();
+  final TextEditingController otherterms = TextEditingController();
+
+  String? branch;
+  String? sales_employee;
+  String? category;
+  String? sub_category;
+  String? country;
+  DateTime? validTillDate;
+
+  var expand = true.obs;
+
+  var bill_id = ''.obs;
+  var ship_id = ''.obs;
+  var contact = ''.obs;
+  var selectedterm = ''.obs;
+
+  bool _other = false;
+  bool _address = false;
+  bool _addition = false;
+  bool _sales_form = false;
+
+
+  int _charCount = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _getBranch();
+    // dc.fetchsalesEmpName(context);
+    // dc.fetchcategories(context);
+    // dc.fetchsubCategories(context);
+    dc.fetchbranches(context);
+    dc.fetchcountries(context);
+    dc.fetchpayterm(context);
+
+    DateTime validTillDate = DateTime.now().add(Duration(days: 7));
+
+    // Format the date as YYYY-MM-DD
+    String formattedDate = "${validTillDate.year}-${validTillDate.month.toString().padLeft(2, '0')}-${validTillDate.day.toString().padLeft(2, '0')}";
+
+    // Assign the formatted date to the controller
+    _dateController.text = formattedDate;
+
+    print("Formatted Date: $formattedDate");
+    print("Current Date: ${DateTime.now()}");
+    print("Valid Till Date: $validTillDate");// Debug print to check the value
+  }
+
+  Future<void> getcontact(customerId) async {
+    await dc.fetchcontact(context, customerId!);
+    await dc.fetchshipping(context, customerId);
+    await dc.fetchbilling(context, customerId);
+  }
+
+  Future<void> _getBranch() async {
+    final SharedPreferences _prefs = await SharedPreferences.getInstance();
+    setState(() {
+      branch = _prefs.getString('branch') ?? 'Branch';
+    });
+  }
+
+  void toggleExpand() {
+    expand.value = !expand.value;
+  }
+
   CustomerController customerController = Get.put(CustomerController());
   CartController cartController = Get.put(CartController());
   String? customerId;
   String? selectedCustomerName;
+  String? selectedcardcode;
+  String? selectedemail;
   double tax_total = 0.00;
   double discount = 0.00;
   bool _dialogShown = false;
   var _ontapproduct = false.obs;
   var total = '0.00'.obs;
-  Map<int, bool> expandedStates =
-      {};
-
+  Map<int, bool> expandedStates = {};
 
   @override
   Widget build(BuildContext context) {
-    final h = MediaQuery.of(context).size.height;
-    final w = MediaQuery.of(context).size.width;
+    final height = MediaQuery.of(context).size.height;
+    final width = MediaQuery.of(context).size.width;
 
     // Format the current date
     String currentDate = DateFormat('dd-MM-yyyy').format(DateTime.now());
@@ -57,7 +132,7 @@ class _QuotationScreenState extends State<NewQuotationScreen> {
           style: TextStyle(
             color: Colors.black,
             fontSize: 19,
-            fontWeight: FontWeight.w400,
+            fontWeight: FontWeight.w500,
           ),
         ),
         leading: GestureDetector(
@@ -87,9 +162,9 @@ class _QuotationScreenState extends State<NewQuotationScreen> {
                         ),
                       ),
                       onPressed: () {
-                       // Get.back();
-                        //  _dialogShown = true;
-                      Get.off(() => BottomNav());
+                        Navigator.pop(context);
+                        //Get.off(() => BottomNav());
+                        Get.back();
                         // pc.clearDetails();
                         // Navigator.of(context)
                         //   ..pop(true)..pop();
@@ -142,7 +217,7 @@ class _QuotationScreenState extends State<NewQuotationScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Row(
+                              Row(
                                 mainAxisAlignment:
                                     MainAxisAlignment.spaceBetween,
                                 children: [
@@ -152,7 +227,7 @@ class _QuotationScreenState extends State<NewQuotationScreen> {
                                         color: Colors.grey, fontSize: 12),
                                   ),
                                   Text(
-                                    'Edit',
+                                    branch ?? 'Branch',
                                     style: TextStyle(
                                       color: AppColors.mainblue,
                                       fontWeight: FontWeight.w600,
@@ -212,24 +287,25 @@ class _QuotationScreenState extends State<NewQuotationScreen> {
                     ),
                     GestureDetector(
                       onTap: () async {
-                        // Navigate to customer selection page and wait for result
-                        final selectedCustomer =
-                        await Get.to(() => CustomerScreen(fromQuotation: true));
+                        final selectedCustomer = await Get.to(
+                            () => CustomerScreen(fromQuotation: true));
 
                         if (selectedCustomer != null) {
                           setState(() {
                             customerId = selectedCustomer['id'].toString();
                             selectedCustomerName = selectedCustomer['name'];
+                            selectedcardcode = selectedCustomer['cardcode'];
+                            selectedemail = selectedCustomer['email'];
                           });
                           print(selectedCustomer['customer']);
                           print(selectedCustomer['name']);
-
+                          getcontact(customerId);
                           await cartController.fetchcartlist(
                               context, customerId!);
                         }
                       },
                       child: Container(
-                        width: w * 1,
+                        width: width * 1,
                         height: 50,
                         padding: const EdgeInsets.symmetric(
                             vertical: 10, horizontal: 16),
@@ -258,7 +334,7 @@ class _QuotationScreenState extends State<NewQuotationScreen> {
                                           shape: BoxShape
                                               .circle, // Make the container circular
                                           color: AppColors
-                                              .mainblue, // Circle background color
+                                              .blues, // Circle background color
                                         ),
                                         child: Icon(
                                           Icons.add,
@@ -273,7 +349,7 @@ class _QuotationScreenState extends State<NewQuotationScreen> {
                                         'Select Customer',
                                         style: TextStyle(
                                             fontSize: 16,
-                                            color: AppColors.mainblue),
+                                            color: AppColors.blues),
                                       ),
                                     ]),
                             ],
@@ -305,96 +381,24 @@ class _QuotationScreenState extends State<NewQuotationScreen> {
                     const SizedBox(
                       height: 5,
                     ),
-                    GestureDetector(
-                      onTap: () async {
-                        if (customerId != null) {
-                          print(
-                              "Navigating to Products with customerId: $customerId");
-                          await Get.to(() => Products(customerId: customerId!));
-                          await cartController.fetchcartlist(
-                              context, customerId!);
-                        } else {
-                          Fluttertoast.showToast(
-                            msg: "Please Select Customer",
-                            toastLength: Toast.LENGTH_SHORT,
-                            gravity: ToastGravity.CENTER,
-                            timeInSecForIosWeb: 1,
-                            backgroundColor: Colors.orange.shade100,
-                            textColor: Colors.black,
-                            fontSize: 16.0,
-                          );
-                        }
-                      },
-                      child: Container(
-                        height: 40,
-                        padding: const EdgeInsets.symmetric(
-                            vertical: 10, horizontal: 16),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Row(children: [
-                          Container(
-                            padding: const EdgeInsets.all(
-                                2), // Adjust padding to control the size of the circle
-                            decoration: BoxDecoration(
-                              shape: BoxShape
-                                  .circle, // Make the container circular
-                              color:
-                                  AppColors.mainblue, // Circle background color
-                            ),
-                            child: Icon(
-                              Icons.add,
-                              size: 12,
-                              color: AppColors.white, // Icon color
-                            ),
-                          ),
-                          SizedBox(
-                            width: 8,
-                          ),
-                          Text(
-                            'Add Product',
-                            style: TextStyle(
-                                fontSize: 16, color: AppColors.mainblue),
-                          ),
-                        ]),
-                      ),
-                    ),
-                    const SizedBox(
-                      height: 10,
-                    ),
-                    //hello?
-                    const Row(
-                      children: [
-                        Text(
-                          'Cart Items',
-                          style: TextStyle(
-                              color: Colors.black, fontWeight: FontWeight.w600),
-                        ),
-                        SizedBox(
-                          width: 5,
-                        ),
-                        Icon(
-                          Icons.info,
-                          size: 18,
-                          color: Colors.black54,
-                        )
-                      ],
-                    ),
-                    const SizedBox(
-                      height: 5,
-                    ),
-                    (customerId != null)
-                        ? Obx(() {
-                            if (cartController.isLoading1.value) {
-                              return const Center(
-                                  child: CircularProgressIndicator());
-                            } else if (cartController
-                                .errorMessage1.value.isNotEmpty) {
-                              return Center(
-                                  child:
-                                      Text(cartController.errorMessage1.value));
-                            } else {
+
+
+
+
+                        Obx(() {
+                          if(cartController.cartitems.isNotEmpty) {
+                            if (cartController.totalorder.value > 0) {
+                              // if (cartController.isLoading1.value) {
+                              //   return const Center(
+                              //       child: CircularProgressIndicator());
+                              // }
+                              // else if (cartController
+                              //     .errorMessage1.value.isNotEmpty) {
+                              //   return Center(
+                              //       child:
+                              //       Text(cartController.errorMessage1.value));
+                              // }
+                              // else {
                               final dataList = cartController.cartlist.value;
                               final maplist = dataList is Map<dynamic, dynamic>
                                   ? dataList
@@ -408,15 +412,10 @@ class _QuotationScreenState extends State<NewQuotationScreen> {
                                   ? maplist["data"]
                                   : [];
 
-                              if (result.isEmpty) {
-                                return const Center(
-                                    child: Text('Add products to cart'));
-                              }
-
                               return Column(children: [
                                 Container(
                                   padding:
-                                      const EdgeInsets.symmetric(horizontal: 4),
+                                  const EdgeInsets.symmetric(horizontal: 4),
                                   decoration: BoxDecoration(
                                     color: Colors.white,
                                     borderRadius: BorderRadius.circular(10),
@@ -427,7 +426,7 @@ class _QuotationScreenState extends State<NewQuotationScreen> {
                                     itemCount: result.length,
                                     itemBuilder: (context, index) {
                                       final item =
-                                          result[index] as Map<String, dynamic>;
+                                      result[index] as Map<String, dynamic>;
                                       final isExpanded =
                                           expandedStates[index] ?? false;
 
@@ -436,7 +435,7 @@ class _QuotationScreenState extends State<NewQuotationScreen> {
                                           // Toggle the expanded/collapsed state for the current item
                                           setState(() {
                                             expandedStates[index] =
-                                                !isExpanded; // Toggle expanded state
+                                            !isExpanded; // Toggle expanded state
                                           });
                                         },
                                         child: Container(
@@ -447,114 +446,53 @@ class _QuotationScreenState extends State<NewQuotationScreen> {
                                           decoration: BoxDecoration(
                                             color: Colors.white,
                                             borderRadius:
-                                                BorderRadius.circular(10),
+                                            BorderRadius.circular(10),
                                           ),
                                           child: Padding(
                                             padding: const EdgeInsets.symmetric(
                                                 horizontal: 15.0),
                                             child: Column(
                                               crossAxisAlignment:
-                                                  CrossAxisAlignment.start,
+                                              CrossAxisAlignment.start,
                                               children: [
                                                 Row(
                                                   mainAxisAlignment:
-                                                      MainAxisAlignment
-                                                          .spaceBetween,
+                                                  MainAxisAlignment
+                                                      .spaceBetween,
                                                   children: [
                                                     SizedBox(
                                                       width:
-                                                          MediaQuery.of(context)
-                                                                  .size
-                                                                  .width *
-                                                              0.5,
+                                                      MediaQuery
+                                                          .of(context)
+                                                          .size
+                                                          .width *
+                                                          0.5,
                                                       child: Text(
-                                                        selectedCustomerName
-                                                             ??
-                                                            '--',
-
-                                                        style: const TextStyle(
-                                                          fontSize: 14,
-                                                          fontWeight:
-                                                              FontWeight.w600,
-                                                        ),
+                                                        item['item_no'] ?? '--',
+                                                        style: TextStyle(
+                                                            fontSize: 14,
+                                                            fontWeight:
+                                                            FontWeight.w600,
+                                                            color: Colors
+                                                                .orange[900]),
                                                         overflow: TextOverflow
                                                             .ellipsis,
                                                       ),
                                                     ),
                                                     Text(
-                                                      '₹ ${double.tryParse(item['total_amount'] ?? '0')?.toStringAsFixed(2) ?? '0.00'}',
-                                                      //  '₹ ${item['product']['price'].toString()}',
-
-                                                      style: const TextStyle(
-                                                        fontSize: 14,
+                                                      "💵 ${((
+                                                          item['subtotal'] ??
+                                                              '0')).toString()?? '- -'}",
+                                                      style: TextStyle(
+                                                        color: Colors
+                                                            .green,
+                                                        // Makes both the emoji and price text green
                                                         fontWeight:
-                                                            FontWeight.w600,
+                                                        FontWeight.bold,
                                                       ),
                                                     ),
-                                                    // Expanded(
-                                                    //   child: IconButton(
-                                                    //     onPressed: () async {
-                                                    //       int cartId =
-                                                    //           item['id'];
-                                                    //       final body = {
-                                                    //         "status": 0,
-                                                    //       };
-                                                    //       await cartController
-                                                    //           .CartUpdate(
-                                                    //               context,
-                                                    //               body,
-                                                    //               cartId);
-                                                    //       Fluttertoast
-                                                    //           .showToast(
-                                                    //         msg:
-                                                    //             "Cart Item removed",
-                                                    //         toastLength: Toast
-                                                    //             .LENGTH_SHORT,
-                                                    //         gravity:
-                                                    //             ToastGravity
-                                                    //                 .CENTER,
-                                                    //         timeInSecForIosWeb:
-                                                    //             1,
-                                                    //         backgroundColor:
-                                                    //             Colors.green
-                                                    //                 .shade100,
-                                                    //         textColor:
-                                                    //             Colors.black,
-                                                    //         fontSize: 16.0,
-                                                    //       );
-                                                    //       await cartController
-                                                    //           .fetchcartlist(
-                                                    //               context,
-                                                    //               customerId!);
-                                                    //     },
-                                                    //     icon: Icon(Icons
-                                                    //         .close_outlined),
-                                                    //   ),
-                                                    // ),
                                                   ],
                                                 ),
-
-                                                // IconButton(
-                                                //   onPressed: () async {
-                                                //     int cartId = item['id'];
-                                                //     final body = {
-                                                //       "status": 0
-                                                //     };
-                                                //
-                                                //     // Call the update method directly
-                                                //     await cartController
-                                                //         .CartUpdate(context,
-                                                //             body, cartId);
-                                                //     await cartController
-                                                //         .fetchcartlist(
-                                                //             context,
-                                                //             customerId!);
-                                                //   },
-                                                //   icon: Icon(Icons.close,
-                                                //       size: 14),
-                                                //     // )
-                                                //   ],
-                                                // ),
                                                 if (isExpanded)
                                                   Padding(
                                                     padding: const EdgeInsets
@@ -564,72 +502,108 @@ class _QuotationScreenState extends State<NewQuotationScreen> {
                                                       children: [
                                                         Row(
                                                           mainAxisAlignment:
-                                                              MainAxisAlignment
-                                                                  .spaceBetween,
+                                                          MainAxisAlignment
+                                                              .spaceBetween,
                                                           children: [
                                                             const Text(
                                                                 'Price with Unit'),
-                                                            Text(item[
-                                                                    "taxable_price"]
-                                                                .toString()),
+                                                            Text((item[
+                                                            "price_af_disc"])
+                                                                .toString() ??
+                                                                '- -'
+                                                            ),
                                                           ],
                                                         ),
                                                         Row(
                                                           mainAxisAlignment:
-                                                              MainAxisAlignment
-                                                                  .spaceBetween,
+                                                          MainAxisAlignment
+                                                              .spaceBetween,
+                                                          children: [
+                                                            const Text(
+                                                                'Sub Total'),
+                                                            Text((item[
+                                                            "subtotal"])
+                                                                .toString() ??
+                                                                '- -'
+                                                            ),
+                                                          ],
+                                                        ),
+                                                        Row(
+                                                          mainAxisAlignment:
+                                                          MainAxisAlignment
+                                                              .spaceBetween,
                                                           children: [
                                                             const Text(
                                                                 'Quantity'),
                                                             Text(item[
-                                                                    "quantity"]
+                                                            "quantity"]
                                                                 .toString()),
                                                           ],
                                                         ),
                                                         Row(
                                                           mainAxisAlignment:
-                                                              MainAxisAlignment
-                                                                  .spaceBetween,
+                                                          MainAxisAlignment
+                                                              .spaceBetween,
                                                           children: [
                                                             const Text(
                                                                 'Discount'),
-                                                            Text(item[
-                                                                    "discount"]
-                                                                .toString()),
+                                                            Text((item[
+                                                            "discount"] ??
+                                                                '- -')
+                                                                .toString() ??
+                                                                '- -'
+                                                            ),
                                                           ],
                                                         ),
                                                         Row(
                                                           mainAxisAlignment:
-                                                              MainAxisAlignment
-                                                                  .spaceBetween,
+                                                          MainAxisAlignment
+                                                              .spaceBetween,
                                                           children: [
                                                             const Text(
-                                                                'Excise'),
-                                                            Text(item["excise"]
-                                                                .toString()),
+                                                                'GST Rate'),
+                                                            Text((item[
+                                                            "gst_rate"])
+                                                                .toString() ??
+                                                                '- -'
+                                                            ),
                                                           ],
                                                         ),
                                                         Row(
                                                           mainAxisAlignment:
-                                                              MainAxisAlignment
-                                                                  .spaceBetween,
+                                                          MainAxisAlignment
+                                                              .spaceBetween,
+                                                          children: [
+                                                            const Text(
+                                                                'GST Value'),
+                                                            Text((item[
+                                                            "gst_value"])
+                                                                .toString() ??
+                                                                '- -'
+                                                            ),
+                                                          ],
+                                                        ),
+                                                        Row(
+                                                          mainAxisAlignment:
+                                                          MainAxisAlignment
+                                                              .spaceBetween,
                                                           children: [
                                                             const Text('UoM'),
-                                                            Text(item["uom"]
-                                                                .toString()),
+                                                            Text(item["uom"] ??
+                                                                '- -'
+                                                                    .toString()),
                                                           ],
                                                         ),
                                                         Text(
-                                                          selectedCustomerName ??
-                                                              'Null',
-
-                                                          style:
-                                                              const TextStyle(
-                                                            fontSize: 11,
-                                                            fontWeight:
-                                                                FontWeight
-                                                                    .normal,
-                                                          ),
+                                                          item['item_desc'] ??
+                                                              '- -',
+                                                          style: TextStyle(
+                                                              fontSize: 11,
+                                                              fontWeight:
+                                                              FontWeight
+                                                                  .normal,
+                                                              color: AppColors
+                                                                  .blues),
                                                           maxLines: 5,
                                                           overflow: TextOverflow
                                                               .ellipsis,
@@ -640,21 +614,21 @@ class _QuotationScreenState extends State<NewQuotationScreen> {
                                                 else
                                                   Padding(
                                                     padding:
-                                                        const EdgeInsets.only(
-                                                            left: 5.0),
+                                                    const EdgeInsets.only(
+                                                        left: 5.0),
                                                     child: Row(
                                                       mainAxisAlignment:
-                                                          MainAxisAlignment
-                                                              .spaceBetween,
+                                                      MainAxisAlignment
+                                                          .spaceBetween,
                                                       children: [
                                                         Text(
                                                           '${item["quantity"]}x',
-                                                          style:
-                                                              const TextStyle(
+                                                          style: TextStyle(
                                                             fontSize: 13,
-                                                            color: Colors.grey,
+                                                            color: Colors
+                                                                .grey[500],
                                                             fontWeight:
-                                                                FontWeight.w400,
+                                                            FontWeight.w400,
                                                           ),
                                                         ),
                                                         Row(
@@ -664,26 +638,28 @@ class _QuotationScreenState extends State<NewQuotationScreen> {
                                                                 _showDiscountBottomSheet(
                                                                     item,
                                                                     item['product']
-                                                                        [
-                                                                        "name"]);
+                                                                    [
+                                                                    "name"]);
                                                               },
                                                               child:
-                                                                  const Padding(
+                                                              const Padding(
                                                                 padding: EdgeInsets
                                                                     .only(
-                                                                        right:
-                                                                            5.0),
+                                                                    right:
+                                                                    5.0),
                                                                 child: Align(
                                                                   alignment:
-                                                                      Alignment
-                                                                          .centerRight,
-                                                                  child: Text(
-                                                                    'Edit',
+                                                                  Alignment
+                                                                      .centerRight,
+                                                                  child:
+                                                                     // Edit
+                                                                  Text('',
                                                                     style: TextStyle(
                                                                         color: AppColors
                                                                             .mainblue,
                                                                         fontWeight:
-                                                                            FontWeight.bold),
+                                                                        FontWeight
+                                                                            .bold),
                                                                   ),
                                                                 ),
                                                               ),
@@ -693,17 +669,17 @@ class _QuotationScreenState extends State<NewQuotationScreen> {
                                                               style: TextStyle(
                                                                 fontSize: 13,
                                                                 color:
-                                                                    Colors.grey,
+                                                                Colors.grey,
                                                                 fontWeight:
-                                                                    FontWeight
-                                                                        .w400,
+                                                                FontWeight
+                                                                    .w400,
                                                               ),
                                                             ),
                                                             Icon(
                                                               Icons
                                                                   .arrow_forward_ios,
                                                               color:
-                                                                  Colors.grey,
+                                                              Colors.grey,
                                                               size: 12,
                                                             ),
                                                           ],
@@ -712,18 +688,957 @@ class _QuotationScreenState extends State<NewQuotationScreen> {
                                                     ),
                                                   ),
                                                 const Divider(),
+
+                                                //               ],
+                                                //                     ),
+                                                //                   ),
+                                                //               ],
+                                                //             ),
+                                                //           ),
+                                                //         ),
+                                                //       );
+                                                //     },
+                                                //   ),
+                                                // ),
+
                                               ],
                                             ),
                                           ),
                                         ),
                                       );
-                                    },
+                                    }),
+                                    ),
+                                GestureDetector(
+                                  onTap: () async {
+                                    // pc.selectedProducts.value = [];
+                                    // Navigator.of(context).pop();
+                                    await Navigator.push(
+                                      context,
+                                      CupertinoPageRoute(
+                                        builder: (context) =>
+                                            ProductQuatscreen(customerId: customerId,cardCode: selectedcardcode),
+
+                                      ),
+                                    );
+                                    if(customerId !=null)
+                                    await cartController.fetchcartlist(context,customerId!);
+                                  },
+                                  child: SizedBox(
+                                    width: width * 0.9,
+                                    child: Padding(
+                                      padding: const EdgeInsets
+                                          .symmetric(
+                                          horizontal: 5.0),
+                                      child: Container(
+                                        decoration: BoxDecoration(
+                                          color: Colors.grey
+                                              .withOpacity(0.3),
+                                          borderRadius:
+                                          const BorderRadius
+                                              .only(
+                                            bottomRight: Radius
+                                                .circular(10),
+                                            bottomLeft: Radius
+                                                .circular(10),
+                                          ),
+                                        ),
+                                        child: const Padding(
+                                          padding: EdgeInsets
+                                              .symmetric(
+                                              vertical: 6.0),
+                                          child: Row(
+                                            mainAxisAlignment:
+                                            MainAxisAlignment
+                                                .center,
+                                            children: [
+                                              Icon(
+                                                Icons
+                                                    .add_circle,
+                                                color: Colors
+                                                    .black,
+                                                size: 12,
+                                              ),
+                                              Text(
+                                                'Add More Items',
+                                                style: TextStyle(
+                                                  fontSize: 13,
+                                                  color: Colors
+                                                      .black,
+                                                  fontWeight: FontWeight
+                                                      .w600,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    ),
                                   ),
-                                )
+                                ),
                               ]);
                             }
-                          })
-                        : SizedBox.shrink()
+                          }
+                          return GestureDetector(
+                            onTap: () async {
+                              if (customerId != null) {
+                                print(
+                                    "Navigating to Products with customerId: $customerId");
+                                await Get.to(() => ProductQuatscreen(
+                                  customerId: customerId!,
+                                  cardCode: selectedcardcode,
+                                ));
+                                await cartController.fetchcartlist(
+                                    context, customerId!);
+                              } else {
+                                Fluttertoast.showToast(
+                                  msg: "Please Select Customer",
+                                  toastLength: Toast.LENGTH_SHORT,
+                                  gravity: ToastGravity.CENTER,
+                                  timeInSecForIosWeb: 1,
+                                  backgroundColor: Colors.orange.shade100,
+                                  textColor: Colors.black,
+                                  fontSize: 16.0,
+                                );
+                              }
+                            },
+                            child: Container(
+                              height: 40,
+                              padding: const EdgeInsets.symmetric(
+                                  vertical: 10, horizontal: 16),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Row(children: [
+                                Container(
+                                  padding: const EdgeInsets.all(
+                                      2), // Adjust padding to control the size of the circle
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape
+                                        .circle, // Make the container circular
+                                    color:
+                                    AppColors.mainblue, // Circle background color
+                                  ),
+                                  child: Icon(
+                                    Icons.add,
+                                    size: 12,
+                                    color: AppColors.white, // Icon color
+                                  ),
+                                ),
+                                SizedBox(
+                                  width: 8,
+                                ),
+                                Text(
+                                  'Add Product',
+                                  style: TextStyle(
+                                      fontSize: 16, color: AppColors.mainblue),
+                                ),
+                              ]),
+                            ),
+                          );
+                        }),
+                    const SizedBox(
+                      height: 12,
+                    ),
+
+                     Row(
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: Row(
+                              children: [
+                                Text(
+                                  'Sales Form',
+                                  style: TextStyle(
+                                      color: Colors.black,
+                                      fontWeight: FontWeight.w600),
+                                ),
+                                SizedBox(
+                                  width: 5,
+                                ),
+                                Icon(
+                                  Icons.info,
+                                  size: 18,
+                                  color: Colors.black54,
+                                )
+                              ],
+                            ),
+                          ),
+                          Spacer(),
+
+                          SizedBox(
+                            width: 10,
+                          ),
+                        ],
+                      ),
+
+                    (_sales_form)?
+
+                    Container(
+                      padding:
+                      const EdgeInsets.symmetric(horizontal: 4,vertical: 3),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                        child: Column(
+                          children: [
+                            Row(
+                              children: [
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 5, vertical: 6),
+                                  child: Container(
+                                      width: width *
+                                          0.4, // Adjust the width as per your requirement (e.g., 40% of screen width)
+                                      height: height * 0.05,
+                                      padding: EdgeInsets.all(12),
+                                      decoration: BoxDecoration(
+                                        color: Colors.grey.withOpacity(0.2),
+                                        borderRadius: BorderRadius.circular(9),
+                                        border: Border.all(color: Colors.grey),
+                                      ),
+                                      child: Text(
+                                        selectedcardcode != null
+                                            ? selectedcardcode!
+                                            : "customer code",
+                                        style: TextStyle(
+                                            color: AppColors.blues,
+                                            fontWeight: FontWeight.normal,
+                                            fontSize: 15),
+                                      )),
+                                ),
+                    Spacer(),
+                    GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          _sales_form = false; // Toggle the visibility of the TextField
+                        });
+                      },
+                      child:
+                        Icon(Icons.close_fullscreen_outlined,
+                            size: 22, color: AppColors.blues),
+                      ),
+                                SizedBox(width: 7)
+                              ],
+                            ),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        "Valid Till",
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          color: Colors.black,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      Padding(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 5, vertical: 3),
+                                        child: Container(
+                                          height: height * 0.05,
+                                          width: width * 0.5,
+                                          padding: EdgeInsets.all(8),
+                                          decoration: BoxDecoration(
+                                            borderRadius:
+                                                BorderRadius.circular(9),
+                                            border:
+                                                Border.all(color: Colors.grey),
+                                          ),
+                                          child: TextFormField(
+                                            controller: _dateController,
+                                            style: TextStyle(
+                                              fontSize: height * 0.02,
+                                              color: Colors.black,
+                                            ),
+                                            decoration: InputDecoration(
+                                              border: InputBorder.none,
+                                              hintText: 'YYYY-MM-DD',
+                                              hintStyle: TextStyle(
+                                                color: Colors.grey
+                                                    .withOpacity(0.8),
+                                                fontSize: Get.height * 0.018,
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                              //  padding: EdgeInsets.all(12),
+                                            ),
+                                            readOnly: true,
+                                            onTap: () async {
+                                              // Pick the date when the user taps the field
+                                              DateTime? pickedDate =
+                                                  await showDatePicker(
+                                                context: context,
+                                                initialDate: DateTime.now().add(
+                                                    Duration(
+                                                        days:
+                                                            8)), // Default 8 days forward
+                                                firstDate: DateTime(2000),
+                                                lastDate: DateTime(2101),
+                                              );
+
+                                              if (pickedDate != null) {
+                                                // If the user picks a date, format and update the controller text and validTillDate
+                                                String formattedDate =
+                                                    "${pickedDate.year}-${pickedDate.month.toString().padLeft(2, '0')}-${pickedDate.day.toString().padLeft(2, '0')}";
+                                                setState(() {
+                                                  _dateController.text =
+                                                      formattedDate; // Update the date in the field
+                                                  validTillDate =
+                                                      pickedDate; // Update validTillDate with the new selected date
+                                                });
+                                              }
+                                            },
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        "Payment %",
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          color: Colors.black,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      Padding(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 5, vertical: 3),
+                                        child: Container(
+                                          width: width *
+                                              0.45, // Adjust the width as per your requirement (e.g., 40% of screen width)
+                                          height: height * 0.05,
+                                          child: Obx(() {
+                                            if (dc.isLoading9.value) {
+                                              return const Center(
+                                                  child:
+                                                      CircularProgressIndicator());
+                                            } else if (dc.errorMessage9.value
+                                                .isNotEmpty) {
+                                              return Center(
+                                                  child: Text(
+                                                      dc.errorMessage9.value));
+                                            } else {
+                                              final PayItems = dc.payterm;
+                                              return DropdownSearch<dynamic>(
+                                                items: PayItems.value,
+                                                dropdownDecoratorProps:
+                                                    DropDownDecoratorProps(
+                                                  dropdownSearchDecoration:
+                                                      CommonWidget
+                                                          .dropdecoration(
+                                                    'Select Term',
+                                                    EdgeInsets.only(
+                                                        top: 13, left: 8),
+                                                  ),
+                                                ),
+                                                onChanged:
+                                                    (dynamic? selectedText) {
+                                                  if (selectedText != null) {
+                                                    setState(() {
+                                                      selectedterm.value =
+                                                          selectedText;
+                                                      print(selectedText);
+                                                    });
+                                                  }
+                                                },
+                                                dropdownBuilder:
+                                                    (context, selectedItem) {
+                                                  return Text(
+                                                    selectedItem ??
+                                                        'Select Term',
+                                                    style: TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.w500,
+                                                      color:
+                                                          Colors.grey.shade600,
+                                                    ),
+                                                  );
+                                                },
+                                              );
+                                            }
+                                          }),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  "Contact ",
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: Colors.black,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 5, vertical: 3),
+                                  child: Container(
+                                    height: height * 0.05,
+                                    child: Obx(() {
+                                      if (dc.isLoading5.value) {
+                                        return Center(
+                                            child: CircularProgressIndicator());
+                                      } else if (dc
+                                          .errorMessage5.value.isNotEmpty) {
+                                        return Center(
+                                            child:
+                                                Text(dc.errorMessage5.value));
+                                      } else {
+                                        final contactlist = dc.contact.value;
+                                        final contactdata =
+                                            contactlist is List<dynamic>
+                                                ? contactlist
+                                                : [];
+
+                                        final Map<String, String> dropdownMap =
+                                            {
+                                          for (var item in contactdata)
+                                            '${item["name"]}-${item["cellolar"]}':
+                                                (item["id"]).toString()
+                                        };
+
+                                        final dropdownItems = dropdownMap.keys.toList();
+
+                                        return Container(
+                                          width: width,
+                                          decoration: BoxDecoration(
+                                              borderRadius:
+                                                  BorderRadius.circular(9)),
+                                          child: DropdownSearch<String>(
+                                            items: dropdownItems,
+                                            dropdownDecoratorProps:
+                                                DropDownDecoratorProps(
+                                              dropdownSearchDecoration:
+                                                  CommonWidget.dropdecoration(
+                                                'Select contact',
+                                                EdgeInsets.only(
+                                                    top: 13, left: 8),
+                                              ),
+                                            ),
+                                            onChanged: (String? conText) async {
+                                              if (conText != null) {
+                                                final conId = dropdownMap[
+                                                    conText]; // Get the ID for the selected text
+                                                if (conId != null) {
+                                                  setState(() {
+                                                    contact.value = conId;
+                                                    print(conId);
+                                                  });
+                                                }
+                                              }
+                                            },
+                                            dropdownBuilder:
+                                                (context, selectedItem) {
+                                              return Text(
+                                                selectedItem ??
+                                                    'Select contact',
+                                                style: TextStyle(
+                                                    fontWeight:
+                                                        FontWeight.w600),
+                                              );
+                                            },
+                                          ),
+                                        );
+                                      }
+                                    }),
+                                  ),
+                                ),
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 5, vertical: 6),
+                                  child: Container(
+                                      width: width, // Adjust the width as per your requirement (e.g., 40% of screen width)
+                                      height: height * 0.05,
+                                      padding: EdgeInsets.all(12),
+                                      decoration: BoxDecoration(
+                                        color: Colors.grey.withOpacity(0.2),
+                                        borderRadius: BorderRadius.circular(9),
+                                        border: Border.all(color: Colors.grey),
+                                      ),
+                                      child: Text(
+                                        selectedemail != null
+                                            ? selectedemail!
+                                            : "customer email",
+                                        style: TextStyle(
+                                            color: AppColors.blues,
+                                            fontWeight: FontWeight.normal,
+                                            fontSize: 15),
+                                      )),
+                                ),
+                              ],
+                            ),
+
+                          ],
+                        ),
+                      ): GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          _sales_form = !_sales_form; // Toggle the visibility of the TextField
+                        });
+                      },
+                      child: Container(
+                      height: 40,
+                      padding: const EdgeInsets.symmetric(
+                          vertical: 10, horizontal: 16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Row(children: [
+                        Container(
+                          padding: const EdgeInsets.all(
+                              2), // Adjust padding to control the size of the circle
+                          decoration: BoxDecoration(
+                            shape: BoxShape
+                                .circle, // Make the container circular
+                            color:
+                            AppColors.mainblue, // Circle background color
+                          ),
+                          child: Icon(
+                            Icons.open_in_full_rounded,
+                            size: 12,
+                            color: AppColors.white, // Icon color
+                          ),
+                        ),
+                        SizedBox(
+                          width: 8,
+                        ),
+                        Text(
+                          'Sales Form',
+                          style: TextStyle(
+                              fontSize: 16, color: AppColors.mainblue),
+                        ),
+                      ]),
+                    ),
+                    ),
+                    SizedBox(height: 10),
+                    Row(children: [
+                      Text(
+                        'Billing Address',
+                        style: TextStyle(fontSize: 12, color: AppColors.blues),
+                      ),
+                    ]),
+                    SizedBox(
+                      height: 7,
+                    ),
+                    Obx(() {
+                      if (dc.isLoading8.value) {
+                        return Center(child: CircularProgressIndicator());
+                      } else if (dc.errorMessage8.value.isNotEmpty) {
+                        return Center(child: Text(dc.errorMessage8.value));
+                      } else {
+                        final billlist = dc.billing.value;
+                        final billdetails = billlist is List<dynamic> ? billlist : [];
+                        final Map<String, String> dropdownMap = {
+                          for (var item in billdetails)
+                            '${item["street"] ?? ""}, ${item["block"] ?? ""}, ${item["city"] ?? ""}, ${item["state"] ?? ""}, ${item["zip_code"] ?? ""}':
+                                (item["id"]).toString()
+                        };
+
+                        final billitem = dropdownMap.keys.toList();
+
+                        String? selectedItem = billitem.isNotEmpty ? billitem[0] : null;
+
+                        if (selectedItem != null && dropdownMap.containsKey(selectedItem)) {
+                          bill_id.value = dropdownMap[selectedItem] ?? '';
+                          print("Initial Selected ID: ${bill_id.value}");
+                        }
+                        return Container(
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(15),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              DropdownSearch<String>(
+                                items: billitem,
+                                selectedItem: selectedItem,
+                                onChanged: (String? newid) {
+                                  if (newid != null) {
+                                    final selectedbill = dropdownMap[newid];
+                                    if (selectedbill != null) {
+                                      if (selectedbill != null) {
+                                        setState(() {
+                                          bill_id.value = selectedbill;
+                                          print("Selected ID: $selectedbill");
+                                        });
+                                      }
+                                    }
+                                  }
+                                },
+
+                                dropdownBuilder: (context, selectedItem) {
+                                  return selectedItem != null
+                                      ? Text(
+                                          selectedItem,
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.w600,
+                                            color: Colors.grey,
+                                          ),
+                                        )
+                                      : Row(
+                                          children: [
+                                            Icon(
+                                              Icons.add_circle,
+                                              color: Colors.grey.shade600,
+                                              size: 17,
+                                            ),
+                                            const SizedBox(width: 5),
+                                            Text(
+                                              "Billing Address",
+                                              style: TextStyle(
+                                                fontWeight: FontWeight.w600,
+                                                color: Colors.grey.shade600,
+                                              ),
+                                            ),
+                                          ],
+                                        );
+                                },
+                                dropdownDecoratorProps: DropDownDecoratorProps(
+                                  dropdownSearchDecoration: InputDecoration(
+                                    border:
+                                        InputBorder.none, // Removes the outline
+                                    isDense: true,
+                                    contentPadding: EdgeInsets.symmetric(
+                                        vertical: 8, horizontal: 10),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      }
+                    }),
+
+                    SizedBox(height: 10),
+                    Row(children: [
+                      Text(
+                        'Shipping Address',
+                        style: TextStyle(fontSize: 12, color: AppColors.blues),
+                      ),
+                    ]),
+                    SizedBox(
+                      height: 7,
+                    ),
+                    Obx(() {
+                      // Check if the data is still loading
+                      if (dc.isLoading7.value) {
+                        return Center(child: CircularProgressIndicator());
+                      }
+                      // Show error message if any
+                      else if (dc.errorMessage7.value.isNotEmpty) {
+                        return Center(child: Text(dc.errorMessage7.value));
+                      }
+                      else {
+                        // Get the shipping data
+                        final shiplist = dc.shipping;
+                        final shipdetail = shiplist is List<dynamic> ? shiplist : [];
+
+                        final Map<String, String> dropdownMap = {
+                          for (var item in shipdetail)
+                            '${item["street"] ?? ""}, ${item["block"] ?? ""}, ${item["city"] ?? ""}, ${item["state"] ?? ""}, ${item["zip_code"] ?? ""}':
+                            (item["id"]).toString()
+                        };
+
+                        final shipItems = dropdownMap.keys.toList();
+                        String? shippingaddress = shipItems.isNotEmpty ? shipItems[0] : null;
+
+                        if (shippingaddress != null && dropdownMap.containsKey(shippingaddress)) {
+                          ship_id.value = dropdownMap[shippingaddress] ?? '';
+                          print("Initial Selected ID: ${ship_id.value}");
+                        }
+                        return Container(
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(15),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Dropdown for shipping addresses
+                              DropdownSearch<String>(
+                                items: shipItems,
+                                selectedItem: shippingaddress,
+                                onChanged: (String? newValue) {
+                                  if (newValue != null) {
+                                    final billId = dropdownMap[newValue];
+                                    if (billId != null) {
+                                      setState(() {
+                                        ship_id.value = billId; // Update the bill_id when a new address is selected
+                                        print("Selected ID: $billId");
+                                      });
+                                    }
+                                  }
+                                },
+                                dropdownBuilder: (context, selectedItem) {
+                                  return selectedItem != null
+                                      ? Text(
+                                    selectedItem,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.grey,
+                                    ),
+                                  )
+                                      : Row(
+                                    children: [
+                                      Icon(
+                                        Icons.add_circle,
+                                        color: Colors.grey.shade600,
+                                        size: 17,
+                                      ),
+                                      const SizedBox(width: 5),
+                                      Text(
+                                        "Shipping Address",
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.w600,
+                                          color: Colors.grey.shade600,
+                                        ),
+                                      ),
+                                    ],
+                                  );
+                                },
+                                dropdownDecoratorProps: DropDownDecoratorProps(
+                                  dropdownSearchDecoration: InputDecoration(
+                                    border: InputBorder.none, // Removes the outline
+                                    isDense: true,
+                                    contentPadding: EdgeInsets.symmetric(vertical: 8, horizontal: 10),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      }
+                    }),
+
+                    SizedBox(height: 10),
+                    Row(
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Row(
+                            children: [
+                              Text(
+                                'Additional Information',
+                                style: TextStyle(
+                                    color: Colors.black,
+                                    fontWeight: FontWeight.w600),
+                              ),
+                              SizedBox(
+                                width: 5,
+                              ),
+                              Icon(
+                                Icons.info,
+                                size: 18,
+                                color: Colors.black54,
+                              )
+                            ],
+                          ),
+                        ),
+                        Spacer(),
+
+                        SizedBox(
+                          width: 10,
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 10),
+
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+
+                        (_other)?
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                vertical: 10, horizontal: 16),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Column(children: [
+                              Row(children: [
+                                Spacer(),
+                                GestureDetector(onTap:(){
+                                _other = false;
+
+                              },child: Icon(
+                                Icons.close_fullscreen_outlined,
+                                size: 18,
+                                color: Colors.black54,
+                              ))],),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 5, vertical: 3),
+                              child: TextField(
+                                controller: remarks,
+                                onChanged: (val) {
+                                  setState(() {
+                                    _charCount = val.length;
+                                  });
+                                },
+                                maxLength: 100,
+                                decoration: InputDecoration(
+                                  contentPadding: const EdgeInsets.all(10),
+                                  hintText: "Remarks",
+                                  alignLabelWithHint: true,
+                                  hintStyle: TextStyle(
+                                    fontWeight: FontWeight.w500,
+                                    color: Colors.grey.shade400,
+                                    fontSize: 15,
+                                  ),
+                                  border: OutlineInputBorder(
+                                    borderSide: BorderSide(color: Colors.grey.shade200),
+                                  ),
+                                ),
+                              ),
+                            ),
+                                                    SizedBox(height: 10),
+                                                    Padding(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 5, vertical: 3),
+                            child: TextField(
+                              controller: deliveryterms,
+                              onChanged: (val) {
+                                setState(() {
+                                  _charCount = val.length;
+                                });
+                              },
+                              maxLength: 50,
+                              decoration: InputDecoration(
+                                contentPadding: const EdgeInsets.all(10),
+                                hintText: "Deleivery Terms",
+                                alignLabelWithHint: true,
+                                hintStyle: TextStyle(
+                                  fontWeight: FontWeight.w500,
+                                  color: Colors.grey.shade400,
+                                  fontSize: 15,
+                                ),
+                                border: OutlineInputBorder(
+                                  borderSide: BorderSide(color: Colors.grey.shade200),
+                                ),
+                              ),
+                            ),),
+                                                   // SizedBox(height: 10),
+                            Row(
+                              children: [
+                                RichText(
+                                  text: const TextSpan(
+                                    text: "Other Terms & Conditions ",
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      color: Colors.black,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                    children: [
+                                      TextSpan(
+                                          text: "*",
+                                          style: TextStyle(
+                                            color: Colors.red,
+                                            fontSize: 13,
+                                          ))
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 5, vertical: 3),
+                              child: TextField(
+                                controller: otherterms,
+                                onChanged: (val) {
+                                  setState(() {
+                                    _charCount = val.length;
+                                  });
+                                },
+                                maxLength: 50,
+                                decoration: InputDecoration(
+                                  contentPadding: const EdgeInsets.all(10),
+                                  hintText: "Other Terms & Conditions",
+                                  alignLabelWithHint: true,
+                                  hintStyle: TextStyle(
+                                    fontWeight: FontWeight.w500,
+                                    color: Colors.grey.shade400,
+                                    fontSize: 15,
+                                  ),
+                                  border: OutlineInputBorder(
+                                    borderSide:
+                                        BorderSide(color: Colors.grey.shade200),
+                                  ),
+                                ),
+                              ),
+                            ),
+                                                    ],),
+                          )
+                     :GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              _other =
+                              !_other; // Toggle the visibility of the TextField
+                            });
+                          },
+                          child: Container(
+                            height: 40,
+                            padding: const EdgeInsets.symmetric(
+                                vertical: 10, horizontal: 16),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Row(children: [
+                              Container(
+                                padding: const EdgeInsets.all(
+                                    2), // Adjust padding to control the size of the circle
+                                decoration: BoxDecoration(
+                                  shape: BoxShape
+                                      .circle, // Make the container circular
+                                  color:
+                                  AppColors.mainblue, // Circle background color
+                                ),
+                                child: Icon(
+                                  Icons.info_outline,
+                                  size: 12,
+                                  color: AppColors.white, // Icon color
+                                ),
+                              ),
+                              SizedBox(
+                                width: 8,
+                              ),
+                              Text(
+                                'Additional Information',
+                                style: TextStyle(
+                                    fontSize: 16, color: AppColors.mainblue),
+                              ),
+                            ]),
+                          ),
+                        ),
+
+
+
+                      ],
+                    ),
+
+
                   ],
                 )),
           ),
@@ -748,27 +1663,43 @@ class _QuotationScreenState extends State<NewQuotationScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
-                  'Total Amount',
+                  'Quantity',
                   style: TextStyle(
                       color: Colors.black, fontWeight: FontWeight.w600),
                 ),
                 if (customerId != null)
                   Obx(() => Text(
-                        '₹${cartController.totalorder.value}',
+                        '${cartController.totalorder.value}',
                         style: const TextStyle(
                             color: Colors.black, fontWeight: FontWeight.w600),
                       )),
               ],
             ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Amount',
+                      style: TextStyle(
+                          color: Colors.black, fontWeight: FontWeight.w600),
+                    ),
+                    if (customerId != null)
+                      Obx(() => Text(
+                        '₹${cartController.totalamount.value}',
+                        style: const TextStyle(
+                            color: Colors.black, fontWeight: FontWeight.w600),
+                      )),
+                  ],
+                ),
             ButtonBS(
-                title: 'Buy Now',
+                title: 'Place Quatation',
                 textColor: Colors.white,
                 fontSize: 15,
                 fontWeight: FontWeight.w600,
-                width: w * 0.35,
-                height: h * 0.04,
+                width: width * 0.39,
+                height: height * 0.04,
                 padding: 5.0,
-                backgroundColor: AppColors.mainblue,
+                backgroundColor: AppColors.blues,
                 borderRadius: 12,
                 suffixIcon: Icons.arrow_forward_ios,
                 suffixIconColor: Colors.white,
@@ -789,25 +1720,45 @@ class _QuotationScreenState extends State<NewQuotationScreen> {
                     );
                     return;
                   }
+                  if (cartController.totalorder < 0) {
+                    Fluttertoast.showToast(
+                      msg: "Please Add Products",
+                      toastLength: Toast.LENGTH_SHORT,
+                      gravity: ToastGravity.CENTER,
+                      backgroundColor: Colors.orange.shade100,
+                      textColor: Colors.black,
+                      fontSize: 16.0,
+                    );
+                    return;
+                  }
                   final body = {
                     "customerId": customerId,
-                    "userId": id,
-                    "branch": 1
+                    "address_id": bill_id.value,
+                    "address_shipto": ship_id.value,
+                    "contact_id": contact.value,
+                    "payment_term": selectedterm.value,
+                    "valid_till": _dateController.text,
+                    "remarks": remarks.text,
+                    "branch": branch,
+                    "delivery_term": deliveryterms.text,
+                    "other_term_condition": otherterms.text
                   };
-                  var response = await cartController.PostOrder(
-                      context, body, customerId!);
-                  var decodedValue = response;
 
+                  print(body);
+
+                  var response = await cartController.PostOrder(context, body, customerId!);
+                  var decodedValue = response;
+                 print(decodedValue);
                   if (decodedValue['success'] == true) {
                     Fluttertoast.showToast(
-                      msg: "Your order was placed successfully",
+                      msg: "Your Quatation was placed successfully",
                       toastLength: Toast.LENGTH_SHORT,
                       gravity: ToastGravity.CENTER,
                       backgroundColor: Colors.green.shade100,
                       textColor: Colors.black,
                       fontSize: 16.0,
                     );
-                   // Get.off(() => OrderPlacedScreen());
+                    Get.back();
                   } else {
                     Fluttertoast.showToast(
                       msg: response['message'] ??
@@ -1139,17 +2090,23 @@ class _QuotationScreenState extends State<NewQuotationScreen> {
                               "discount5": Distri.text,
                             };
                             print(body);
-                            await cartController.CartUpdate(context, body, item['id']);
-                            if (cartController.cardupdate.value !=null) {
-                              var decodedValue = cartController.cardupdate.value;
-                               print("fwevraesvvfffffff$decodedValue");
+                            await cartController.CartUpdate(
+                                context, body, item['id']);
+                            if (cartController.cardupdate.value != null) {
+                              var decodedValue =
+                                  cartController.cardupdate.value;
+                              print("fwevraesvvfffffff$decodedValue");
                               if (decodedValue['success'] == true) {
                                 Navigator.pop(context);
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
-                                    content: Text(decodedValue['message'] ?? 'Updated!'), // Use the message from response
-                                    backgroundColor: Colors.green, // Set the background color to indicate success
-                                    duration: Duration(seconds: 3), // Duration for SnackBar visibility
+                                    content: Text(decodedValue['message'] ??
+                                        'Updated!'), // Use the message from response
+                                    backgroundColor: Colors
+                                        .green, // Set the background color to indicate success
+                                    duration: Duration(
+                                        seconds:
+                                            3), // Duration for SnackBar visibility
                                   ),
                                 );
                                 await cartController.fetchcartlist(
@@ -1158,8 +2115,10 @@ class _QuotationScreenState extends State<NewQuotationScreen> {
                                 // Handle case where the success field is false
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
-                                    content: Text(decodedValue['message'] ?? 'Failed to update cart.'),
-                                    backgroundColor: Colors.red, // Set the background color to indicate failure
+                                    content: Text(decodedValue['message'] ??
+                                        'Failed to update cart.'),
+                                    backgroundColor: Colors
+                                        .red, // Set the background color to indicate failure
                                     duration: Duration(seconds: 3),
                                   ),
                                 );
@@ -1168,15 +2127,14 @@ class _QuotationScreenState extends State<NewQuotationScreen> {
                               // Handle null or invalid response
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
-                                  content: Text('Unexpected response from server. Please try again.'),
-                                  backgroundColor: Colors.red, // Set the background color to indicate failure
+                                  content: Text(
+                                      'Unexpected response from server. Please try again.'),
+                                  backgroundColor: Colors
+                                      .red, // Set the background color to indicate failure
                                   duration: Duration(seconds: 3),
                                 ),
                               );
                             }
-
-
-
                           },
                           //separateSuffixIcon: 5,
                         ),

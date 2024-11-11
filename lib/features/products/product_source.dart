@@ -12,9 +12,10 @@ import '../../../core/error/unauth_dilogbox.dart';
 
 abstract class ProductRepository {
   Future<Either<Failure, dynamic>> fetchproducts(BuildContext context);
+  Future<Either<Failure, dynamic>> fetchQuatationproducts(BuildContext context,String customerId
+      );
 
 }
-
 class ProductDataSourceImpl implements ProductRepository {
   @override
   Future<Either<Failure, dynamic>> fetchproducts(BuildContext context) async {
@@ -56,5 +57,44 @@ class ProductDataSourceImpl implements ProductRepository {
       ));
     }
   }
+  @override
+  Future<Either<Failure, dynamic>> fetchQuatationproducts(BuildContext context,customerId) async {
+    try {
+      final headers = await ApiHelper.getHeaders();
+      final response = await http.get(
+        Uri.parse(URLConst.baseURL + URLConst.products_quat+customerId),
+        headers: headers,
+      );
+      if (response.statusCode == 401) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Unauthorized access'),
+            duration: Duration(seconds: 3),
+            backgroundColor: Colors.red,
+          ),
+        );
+        UnauthDilogbox(); // Call your custom dialog here if needed.
+        return Left(Failure(
+          statusCode: 401,
+          message: 'Unauthorized access',
+        ));
+      }
 
+      if (response.statusCode == 200) {
+        print("List fetched: ${response.body}");
+        final List<dynamic> jsonResponse = json.decode(response.body);
+        return Right(jsonResponse);
+      } else {
+        return Left(Failure(
+          statusCode: response.statusCode,
+          message: 'Failed to fetch customers data',
+        ));
+      }
+    } catch (e) {
+      return Left(Failure(
+        statusCode: 500,
+        message: 'Error occurred: $e',
+      ));
+    }
+  }
 }

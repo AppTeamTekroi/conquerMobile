@@ -11,12 +11,16 @@ import '../../../core/error/failure.dart';
 import '../../../core/error/unauth_dilogbox.dart';
 
 abstract class DropdownSourceRepository {
-   Future<Either<Failure, dynamic>> fetchbranches(BuildContext context);
+  Future<Either<Failure, dynamic>> fetchbranches(BuildContext context);
   Future<Either<Failure, dynamic>> fetchcategories(BuildContext context);
   Future<Either<Failure, dynamic>> fetchsubCategories(BuildContext context);
   Future<Either<Failure, dynamic>> fetchsalesEmpName(BuildContext context);
   Future<Either<Failure, dynamic>> fetchcountries(BuildContext context);
   Future<Either<Failure, dynamic>> fetchsearchByGstin(BuildContext context);
+  Future<Either<Failure, dynamic>> fectchcontact(BuildContext context,String custId);
+
+  Future<Either<Failure, dynamic>> billingaddress(BuildContext context,String custId);
+
 }
 
 class DropdownSourceImpl implements DropdownSourceRepository {
@@ -46,7 +50,7 @@ class DropdownSourceImpl implements DropdownSourceRepository {
 
       if (response.statusCode == 200) {
         print("List fetched: ${response.body}");
-        final Map<String, dynamic> jsonResponse = json.decode(response.body);
+        final List<dynamic> jsonResponse = json.decode(response.body);
         return Right(jsonResponse);
       } else {
         return Left(Failure(
@@ -90,7 +94,7 @@ class DropdownSourceImpl implements DropdownSourceRepository {
 
       if (response.statusCode == 200) {
         print("ID fetched: ${response.body}");
-        final Map<String, dynamic> jsonResponse = json.decode(response.body);
+        final List<dynamic> jsonResponse = json.decode(response.body);
         return Right(jsonResponse);
       } else {
         return Left(Failure(
@@ -134,7 +138,7 @@ class DropdownSourceImpl implements DropdownSourceRepository {
 
       if (response.statusCode == 200) {
         print("ID fetched: ${response.body}");
-        final Map<String, dynamic> jsonResponse = json.decode(response.body);
+        final List<dynamic> jsonResponse = json.decode(response.body);
         return Right(jsonResponse);
       } else {
         return Left(Failure(
@@ -178,7 +182,7 @@ class DropdownSourceImpl implements DropdownSourceRepository {
 
       if (response.statusCode == 200) {
         print("ID fetched: ${response.body}");
-        final Map<String, dynamic> jsonResponse = json.decode(response.body);
+        final List<dynamic> jsonResponse = json.decode(response.body);
         return Right(jsonResponse);
       } else {
         return Left(Failure(
@@ -203,7 +207,7 @@ class DropdownSourceImpl implements DropdownSourceRepository {
         Uri.parse(URLConst.baseURL+URLConst.countries),
         headers: headers,
       );
-      print("ID fetched: ${response.body}");
+     // print("ID fetched: ${response.body}");
 
       if (response.statusCode == 401) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -222,7 +226,7 @@ class DropdownSourceImpl implements DropdownSourceRepository {
 
       if (response.statusCode == 200) {
         print("ID fetched: ${response.body}");
-        final Map<String, dynamic> jsonResponse = json.decode(response.body);
+        final List<dynamic> jsonResponse = json.decode(response.body);
         return Right(jsonResponse);
       } else {
         return Left(Failure(
@@ -247,6 +251,135 @@ class DropdownSourceImpl implements DropdownSourceRepository {
         Uri.parse(URLConst.baseURL+URLConst.searchByGstin),
         headers: headers,
       );
+     // print("ID fetched: ${response.body}");
+
+      if (response.statusCode == 401) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Unauthorized access'),
+            duration: Duration(seconds: 3),
+            backgroundColor: Colors.red,
+          ),
+        );
+        UnauthDilogbox(); // Call your custom dialog here if needed.
+        return Left(Failure(
+          statusCode: 401,
+          message: 'Unauthorized access',
+        ));
+      }
+
+      if (response.statusCode == 200) {
+       // print("ID fetched: ${response.body}");
+        final Map<String, dynamic> jsonResponse = json.decode(response.body);
+        return Right(jsonResponse);
+      } else {
+        return Left(Failure(
+          statusCode: response.statusCode,
+          message: 'Failed to fetch id details',
+        ));
+      }
+    } catch (e) {
+      return Left(Failure(
+        statusCode: 500,
+        message: 'Error occurred: $e',
+      ));
+    }
+  }
+  @override
+  Future<Either<Failure, dynamic>> fectchcontact(BuildContext context,customerId) async {
+    try {
+      print(id);
+      final headers = await ApiHelper.getHeaders();
+      final response = await http.get(
+        Uri.parse(URLConst.baseURL+URLConst.contact+customerId),
+        headers: headers,
+      );
+     // print("ID fetched: ${response.body}");
+
+      if (response.statusCode == 401) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Unauthorized access'),
+            duration: Duration(seconds: 3),
+            backgroundColor: Colors.red,
+          ),
+        );
+        UnauthDilogbox(); // Call your custom dialog here if needed.
+        return Left(Failure(
+          statusCode: 401,
+          message: 'Unauthorized access',
+        ));
+      }
+
+      if (response.statusCode == 200) {
+       // print("ID fetched: ${response.body}");
+        final List<dynamic> jsonResponse = json.decode(response.body);
+        return Right(jsonResponse);
+      } else {
+        return Left(Failure(
+          statusCode: response.statusCode,
+          message: 'Failed to fetch id details',
+        ));
+      }
+    } catch (e) {
+      return Left(Failure(
+        statusCode: 500,
+        message: 'Error occurred: $e',
+      ));
+    }
+  }
+  @override
+  Future<Either<Failure, dynamic>> shippingaddress(BuildContext context,customerId) async {
+    try {
+      print(id);
+      final headers = await ApiHelper.getHeaders();
+      final response = await http.get(
+        Uri.parse(URLConst.baseURL+URLConst.shipping+customerId),
+        headers: headers,
+      );
+     // print("ID fetched: ${response.body}");
+
+      if (response.statusCode == 401) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Unauthorized access'),
+            duration: Duration(seconds: 3),
+            backgroundColor: Colors.red,
+          ),
+        );
+        UnauthDilogbox(); // Call your custom dialog here if needed.
+        return Left(Failure(
+          statusCode: 401,
+          message: 'Unauthorized access',
+        ));
+      }
+
+      if (response.statusCode == 200) {
+       // print("ID fetched: ${response.body}");
+        final List<dynamic> jsonResponse = json.decode(response.body);
+        return Right(jsonResponse);
+      } else {
+        return Left(Failure(
+          statusCode: response.statusCode,
+          message: 'Failed to fetch id details',
+        ));
+      }
+    } catch (e) {
+      return Left(Failure(
+        statusCode: 500,
+        message: 'Error occurred: $e',
+      ));
+    }
+  }
+  @override
+  Future<Either<Failure, dynamic>> billingaddress(BuildContext context,customerId) async {
+    try {
+      print(id);
+      final headers = await ApiHelper.getHeaders();
+      final response = await http.get(
+        Uri.parse(URLConst.baseURL+URLConst.billing+customerId),
+        headers: headers,
+      );
       print("ID fetched: ${response.body}");
 
       if (response.statusCode == 401) {
@@ -265,8 +398,51 @@ class DropdownSourceImpl implements DropdownSourceRepository {
       }
 
       if (response.statusCode == 200) {
-        print("ID fetched: ${response.body}");
-        final Map<String, dynamic> jsonResponse = json.decode(response.body);
+        print("billing addres in source fetched: ${response.body}");
+        final List<dynamic> jsonResponse = json.decode(response.body);
+        return Right(jsonResponse);
+      } else {
+        return Left(Failure(
+          statusCode: response.statusCode,
+          message: 'Failed to fetch id details',
+        ));
+      }
+    } catch (e) {
+      return Left(Failure(
+        statusCode: 500,
+        message: 'Error occurred: $e',
+      ));
+    }
+  }
+  @override
+  Future<Either<Failure, dynamic>> Paymentaddress(BuildContext context) async {
+    try {
+      print(id);
+      final headers = await ApiHelper.getHeaders();
+      final response = await http.get(
+        Uri.parse(URLConst.baseURL+URLConst.payterm),
+        headers: headers,
+      );
+     // print("ID fetched: ${response.body}");
+
+      if (response.statusCode == 401) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Unauthorized access'),
+            duration: Duration(seconds: 3),
+            backgroundColor: Colors.red,
+          ),
+        );
+        UnauthDilogbox(); // Call your custom dialog here if needed.
+        return Left(Failure(
+          statusCode: 401,
+          message: 'Unauthorized access',
+        ));
+      }
+
+      if (response.statusCode == 200) {
+       // print("ID fetched: ${response.body}");
+        final List<dynamic> jsonResponse = json.decode(response.body);
         return Right(jsonResponse);
       } else {
         return Left(Failure(

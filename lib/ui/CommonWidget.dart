@@ -3,8 +3,28 @@ import 'package:google_fonts/google_fonts.dart';
 
 class CommonWidget {
 
+ static InputDecoration dropdecoration(String hintText,EdgeInsets padding) {
+  return InputDecoration(
+      hintText: hintText,
+      contentPadding: padding,
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(9),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(9),
+        borderSide: BorderSide(color: Colors.grey),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(9),
+        borderSide: BorderSide(color: Colors.grey),
+      ),
+      hintStyle: const TextStyle(
+          color: Colors.black,
+          fontWeight: FontWeight.bold),
 
+  );
 
+}
   static Widget getTextWidgetPopSemi(String title,
       {textAlign = TextAlign.center,
         double size = 16,

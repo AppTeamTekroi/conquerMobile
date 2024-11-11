@@ -1,27 +1,28 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:get/get.dart';
-import 'package:intl/intl.dart';
-import 'package:vconquer/features/Quatation/new_quatation_page.dart';
+import 'package:dropdown_search/dropdown_search.dart';
 import 'package:vconquer/features/Quatation/quatation_controller.dart';
-import 'package:vconquer/features/navBar.dart';
+import 'package:vconquer/features/orderlist/order_page.dart';
+import 'package:vconquer/ui/richtext.dart';
 
+import '../../ui/Buttons/buttonBS.dart';
 import '../../ui/color/appColor.dart';
-import '../../ui/richtext.dart';
-import '../orderlist/order_controller.dart';
+import '../customers/customer_screen.dart';
+import 'new_quatation_page.dart';
 
 class QuatationScreen extends StatefulWidget {
-  QuatationScreen({
-    super.key,
-  });
+  const QuatationScreen({super.key});
+
   @override
   State<QuatationScreen> createState() => _QuatationScreentate();
 }
 
 class _QuatationScreentate extends State<QuatationScreen> {
-  //OrderPlacedController oc = Get.put(OrderPlacedController());
   QuatationController qc = Get.put(QuatationController());
-  String currentDate = DateFormat('dd-MM-yyyy').format(DateTime.now());
+
+  String? dropdownValue;
 
   @override
   void initState() {
@@ -30,373 +31,432 @@ class _QuatationScreentate extends State<QuatationScreen> {
   }
 
   @override
-  void dispose() {
-    qc.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
     final width = MediaQuery.sizeOf(context).width;
     final height = MediaQuery.sizeOf(context).height;
+
     return Scaffold(
-        backgroundColor: AppColors.primary,
-        appBar: AppBar(
-          title: Text(
-            "Quotation Catalog",
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-
-          actions: [
-            Text(
-              "New",
-              style: TextStyle(
-                color: AppColors.blues,
-              ),
-            ),
-            SizedBox(
-              width: 5,
-            ),
-            GestureDetector(onTap: () => Get.to(() => NewQuotationScreen()) ,child:
-            Row(
-                children: [
-
-            Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(100),
-                border: Border.all(
-                  color: Colors.red.withOpacity(0.4),
-                  width: 4,
-                ),
-              ),
-
-              child:
-
-                CircleAvatar(
-                  backgroundColor: Colors.red,
-                  radius: 9,
-                  child: Icon(
-                    Icons.add,
-                    size: 14,
-                    color: Colors.white,
-                  ),
-                ),
-            ),
-              ],
-              )
-            ),
-
-            SizedBox(
-              width: 10,
-            )
-          ],
+      backgroundColor: AppColors.primary,
+      appBar: AppBar(
+        title: Text(
+          "ORDERS CATALOG",
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
         ),
-        body: Column(children: [
-          Container(
-            margin: EdgeInsets.all(MediaQuery.of(context).size.width * 0.03),
-            height: height * 0.18,
-            width: MediaQuery.of(context).size.width * 0.94,
-            decoration: BoxDecoration(
-                color: Colors.white, borderRadius: BorderRadius.circular(12)),
-            child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: height * 0.015),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  SizedBox(
-                    height: height * 0.08,
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(horizontal: height * 0.015),
-                      child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceAround,
-                          // crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text(
-                                  'Total Amount',
-                                  style: TextStyle(
-                                      color:
-                                          Color.fromARGB(255, 147, 147, 147)),
-                                ),
-                                Text(
-                                  "₹0.00",
-                                  style: TextStyle(
-                                      fontSize: height * 0.025,
-                                      fontWeight: FontWeight.bold),
-                                ),
-                              ],
-                            ),
-                            const Spacer(),
-                            Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
-                                const Text('Paid',
-                                    style: TextStyle(
-                                        color: Color.fromARGB(
-                                            255, 147, 147, 147))),
-                                Text(
-                                  "₹0.00",
-                                  style: TextStyle(
-                                      fontSize: height * 0.025,
-                                      fontWeight: FontWeight.bold),
-                                ),
-                              ],
-                            ),
-                            const Spacer(),
-                            Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              crossAxisAlignment: CrossAxisAlignment.end,
-                              children: [
-                                const Text(
-                                  'Pending',
-                                  style: TextStyle(
-                                      color:
-                                          Color.fromARGB(255, 147, 147, 147)),
-                                ),
-                                Text(
-                                  "₹0.00",
-                                  style: TextStyle(
-                                      fontSize: height * 0.025,
-                                      fontWeight: FontWeight.bold),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-
-                    ),
+        actions: [
+          GestureDetector(
+            onTap: () => Get.to(() => NewOrderScreen()),
+            child: Row(
+              children: [
+                Text(
+                  'New',
+                  style: TextStyle(
+                      color: Colors.green[900], fontWeight: FontWeight.w500),
+                ),
+                Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(100),
+                    border: Border.all(
+                        color: Colors.red.withOpacity(0.4), width: 4),
                   ),
-                  const Divider(
-                    color: Color.fromARGB(255, 193, 193, 193),
-                    height: 2,
+                  child: CircleAvatar(
+                    backgroundColor: Colors.red,
+                    radius: 9,
+                    child: Icon(Icons.add, size: 14, color: Colors.white),
                   ),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                    // crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Text(
-                                'This Year',
-                                style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: height * 0.02),
-                              ),
-                              const Icon(CupertinoIcons.pen)
-                            ],
-                          ),
-                          const Text(
-                            "Starting date - ending date",
-                            style: TextStyle(
-                                color: Colors.grey,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 12),
-                          ),
-                        ],
-                      ),
-                      const Spacer(),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(
-                            Icons.filter_alt_rounded,
-                            color: Colors.grey,
-                            size: 20,
-                          ),
-                          SizedBox(
-                            width: 10,
-                          ),
-                          const Icon(
-                            CupertinoIcons.search,
-                            color: Colors.grey,
-                            size: 20,
-                          ),
-                        ],
-                      )
-                    ],
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
-          Expanded(child:
-    Obx(() {
-      if (qc.isLoading.value) {
-        return Center(child: CircularProgressIndicator());
-      } else if (qc.errorMessage.value.isNotEmpty) {
-        return Center(
-            child: Text(qc.errorMessage.value));
-      } else {
-        final dataList = qc.quatationlist.value;
-        final list = dataList is Map<dynamic, dynamic> ? dataList : {};
-        final employeeOnDuty =list["data"] is List<dynamic> ? list["data"] : [];
-        return ListView.builder(
-            itemCount: employeeOnDuty.length,
-            itemBuilder: (context, index) {
-              final item = employeeOnDuty[index] as Map<String, dynamic>;
+          SizedBox(width: 10),
+        ],
+      ),
+      body: Padding(
+        padding: EdgeInsets.symmetric(horizontal: 10, vertical: 20),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                Container(
+                    decoration: BoxDecoration(
+                        // borderRadius: BorderRadius.circular(100),
+                        // border: Border.all(color: Colors.red.withOpacity(0.4), width: 4),
+                        ),
+                    child: Text(
+                      'COPY FROM QUATATION',
+                      style: TextStyle(
+                          color: Colors.green[900],
+                          fontWeight: FontWeight.w500),
+                    )),
+              ],
+            ),
+            SizedBox(height: 8),
+            Obx(() {
+              if (qc.isLoading.value) {
+                return Center(child: CircularProgressIndicator());
+              } else if (qc.errorMessage.value.isNotEmpty) {
+                return Center(child: Text(qc.errorMessage.value));
+              } else {
+                final dataList = qc.quatationlist.value;
+                final list = dataList is Map<dynamic, dynamic> ? dataList : {};
+                final employeeOnDuty = list["data"] is List<dynamic> ? list["data"] : [];
 
-    return  Padding(
-                  padding:  EdgeInsets.symmetric(vertical: 5,horizontal: Get.height * 0.015),
-              child:InkWell(
-                  onTap: () {
-                    print('Order Card Pressed');
-                    //
-                    // Navigator.push(
-                    //   context,
-                    //   MaterialPageRoute(
-                    //     builder: (context) =>
-                    //         Orderdetails(
-                    //             id:
-                    //             oc.orderPlacedList[index].id!.toString()),
-                    //   ),
-                    // );
-                  },
-                  child:Card(
-                    clipBehavior: Clip.antiAliasWithSaveLayer,
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(15)),
-                    child: Container(
-                      color: Colors.white,
-                      child: Padding(
-                        padding:  EdgeInsets.symmetric(vertical: 5,horizontal: Get.height * 0.015),
-                      child:Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                final Map<String, String> dropdownMap = {
+                  for (var item in employeeOnDuty)
+                    '  ${item["id"]}-(${item["customer_webid"]}) - ${item["customer_commonname"]}':
+                        (item["id"]).toString()
+                };
+
+                // Extract keys (display text) for DropdownSearch items
+                final dropdownItems = dropdownMap.keys.toList();
+
+                return Container(
+                  width: width,
+                  decoration:
+                      BoxDecoration(borderRadius: BorderRadius.circular(9)),
+                  child: DropdownSearch<String>(
+                    items: dropdownItems,
+                    dropdownDecoratorProps: DropDownDecoratorProps(
+                      dropdownSearchDecoration: InputDecoration(
+                        hintText: 'Select SQ',
+                        contentPadding: const EdgeInsets.all(8.0),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(9),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(9),
+                          borderSide: BorderSide(color: Colors.grey),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(9),
+                          borderSide: BorderSide(color: Colors.grey),
+                        ),
+                        hintStyle: const TextStyle(
+                            color: Colors.black, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                    onChanged: (String? selectedText) async {
+                      if (selectedText != null) {
+                        final selectedId = dropdownMap[
+                            selectedText]; // Get the ID for the selected text
+                        if (selectedId != null) {
+                          setState(() {
+                            dropdownValue = selectedId;
+                            print(selectedId);
+                          });
+                          await qc.Quatationdetails(context, selectedId);
+                        }
+                      }
+                    },
+                    dropdownBuilder: (context, selectedItem) {
+                      return Text(
+                        selectedItem ?? 'Select Sales Quotation',
+                        style: TextStyle(
+                            fontWeight: FontWeight.w600),
+                      );
+                    },
+                  ),
+                );
+              }
+            }),
+            dropdownValue != null && dropdownValue!.isNotEmpty?
+            Obx(() {
+              if (qc.isLoading2.value) {
+                return Center(child: CircularProgressIndicator());
+              } else if (qc.errorMessage2.value.isNotEmpty) {
+                return Center(child: Text(qc.errorMessage2.value));
+              } else {
+                final dataList = qc.quatationdetails.value;
+                final list = dataList is Map<dynamic, dynamic> ? dataList : {};
+                final items = list["quotation_items"] is List<dynamic>
+                    ? list["quotation_items"]
+                    : [];
+                return Stack(
+                  children: [
+                    SingleChildScrollView(
+                      physics: const BouncingScrollPhysics(),
+                      child:
+                       Column(
+                          children: [
+                            const SizedBox(height: 10),
+                             Row(
+                              children: [
+                                Text(
+                                  '⇢ CUSTOMER',
+                                  style: TextStyle(
+                                      color: Colors.orange[900],
+                                      fontWeight: FontWeight.w500),
+                                ),
+                                SizedBox(
+                                  width: 5,
+                                ),
+                                Icon(
+                                  Icons.info,
+                                  size: 18,
+                                  color: Colors.black54,
+                                )
+                              ],
+                            ),
+                            const SizedBox(
+                              height: 5,
+                            ),
+                            Container(
+                              width: width * 1,
+                              height: 50,
+                              padding: const EdgeInsets.symmetric(
+                                  vertical: 10, horizontal: 16),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: SingleChildScrollView(
+                                scrollDirection: Axis.horizontal,
+                                child: Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    // Show selected customer name and ID if available, otherwise prompt to select a customer
+                                    Text(
+                                      list['quotation']
+                                              ['customer_commonname'] ??
+                                          '--',
+                                      //  (ID: $customerId)
+                                      style: const TextStyle(
+                                          fontSize: 16, color: Colors.black87),
+                                    )
+                                  ],
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 10),
+                             Row(
+                              children: [
+                                Text(
+                                  ' ⇢  PRODUCTS',
+                                  style: TextStyle(
+                                      color: Colors.orange[900],
+                                      fontWeight: FontWeight.w500),
+                                ),
+                                // SizedBox(
+                                //   width: 5,
+                                // ),
+                                // Icon(
+                                //   Icons.info,
+                                //   size: 18,
+                                //   color: Colors.black54,
+                                // )
+                              ],
+                            ),
+                            const SizedBox(
+                              height: 5,
+                            ),
+                            // Display each item in the quotation_items list
+                            ...items.map((item) {
+
+                              return Container(
+                                margin: const EdgeInsets.only(bottom: 10),
+                                padding: const EdgeInsets.all(10),
+                                decoration: BoxDecoration(
+                                  color: Colors.grey[100],
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(color: Colors.grey[300]!),
+                                ),
+                              child:  Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                     children: [
-                                      Row(
-                                        mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
-                                        children: [
-                                          Text(
-                                            "Code: ${item["customer_webid"]}",
-                                            style: TextStyle(
-                                                fontSize: 15,
-                                                fontWeight: FontWeight.w500,
-                                                color: AppColors.blues),
-                                          ),
-                                          // CommonRichText(
-                                          //   label: 'Doc No: ',
-                                          //   value: item["doc_no"] ?? '- -',
-                                          // ),
-                                          GestureDetector(
-                                            onTap: () async {
-                                              // await customerController.fetchUserID(
-                                              //     context,
-                                              //     itemId); // Fetch the details
-                                              // Get.to(() => CustomerEditscreen());
-                                            },
-                                            child: Row(
-                                              children: [
-                                                // Text(
-                                                //   "Edit",
-                                                //   style: TextStyle(
-                                                //       fontSize: 14,
-                                                //       // fontWeight: FontWeight.w500,
-                                                //       color: AppColors.blues),
-                                                // ),
-                                                // Icon(
-                                                //   Icons.edit,
-                                                //   color: AppColors.blues,
-                                                //   size: 14,
-                                                // )
-                                              ],
-                                            ),
-                                          )
-                                        ],
+                                      Text(
+                                        item['item_no'] ?? 'N/A',
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.black87,
+                                        ),
                                       ),
-                                      Divider(),
-                                      CommonRichText(
-                                        label: 'Card Name: ',
-                                        value: item["customer_commonname"] ?? '',
-                                      ),
-                                      Row(
-                                        mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
-                                        children: [
-                                          CommonRichText(
-                                            label: 'On: ',
-                                            value: item["quotation_date"] ?? '- -',
-                                          ),
-                                          CommonRichText(
-                                            label: 'Valid: ',
-                                            value: item["valid_till"] ?? '- -',
-                                          ),
-                                          // Text(
-                                          //   "📞 ${item["cellular"] ?? '- -'}",
-                                          //   style: TextStyle(
-                                          //     fontSize: 14,
-                                          //     color: Colors.green[900],
-                                          //   ),
-                                          //
-                                          // ),
-                                          // CommonRichText(
-                                          //   label: 'Veh No: ',
-                                          //   value: item["vehicle_no"] ?? '- -',
-                                          // ),
-                                        ],
-                                      ),
-                                      Row(
-                                        mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
-                                        children: [
-                                          // CommonRichText(
-                                          //   label: 'Sales Emp: ',
-                                          //   value: item["sales_emp_name"] ?? '- -',
-                                          // ),
-
-                                          Text(
-                                            "📞 ${item["contact_id"] ?? '- -'}",
-                                            style: TextStyle(
-                                              fontSize: 14,
-                                              color: Colors.green[900],
-                                            ),
-                                          ),
-                                          GestureDetector(
-                                            onTap: () {},
-                                            child: Row(
-                                              children: [
-                                                Text(
-                                                  "Details",
-                                                  style: TextStyle(
-                                                      fontSize: 14,
-                                                      // fontWeight: FontWeight.w500,
-                                                      color: Colors.grey),
-                                                ),
-                                                Icon(
-                                                  Icons.arrow_forward_ios_outlined,
-                                                  color: Colors.grey,
-                                                  size: 14,
-                                                )
-                                              ],
-                                            ),
-                                          )
-                                        ],
+                                      Text(
+                                        "💵 ${item['price'] ?? '- -'}",
+                                        style: TextStyle(
+                                          color: Colors.green,  // Makes both the emoji and price text green
+                                          fontWeight: FontWeight.bold,
+                                        ),
                                       ),
                                     ],
                                   ),
+                                  const SizedBox(height: 5),
+
+                                  Text(
+                                    item['item_desc'] ?? 'No description',
+                                    style: const TextStyle(color: Colors.black54),
+                                  ),
+                                  const SizedBox(height: 10),
+
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(
+                                        'Qty: ${item['quantity']?.toString() ?? '--'}',
+                                        style: const TextStyle(color: Colors.black87),
+                                      ),
+                                      CommonRichText(
+                                        label: 'GST Rate: ',
+                                        value: item['gst_rate']?.toString() ?? '--',
+                                      ),
+                                      CommonRichText(
+                                        label: 'GST Val: ',
+                                        value: item['gst_value']?.toString() ?? '--',
+                                      ),
+                                    ],
+                                  ),
+
+                                  // GST Details
+
+                                ],
+                              ),
+
+
+                              );
+                            }).toList(),
+                            Row(
+                              children: [
+                                Text(
+                                  '⇢ Billing Address',
+                                  style: TextStyle(
+                                      color: Colors.orange[900],
+                                      fontWeight: FontWeight.w500),
                                 ),
+                                SizedBox(
+                                  width: 5,
+                                ),
+                                // Icon(
+                                //   Icons,
+                                //   size: 18,
+                                //   color: Colors.black54,
+                                // )
+                              ],
+                            ),
+                            Container(
+                              width: width * 1,
+                              height: 50,
+                              padding: const EdgeInsets.symmetric(
+                                  vertical: 10, horizontal: 16),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: SingleChildScrollView(
+                                scrollDirection: Axis.horizontal,
+                                child: Row(
+                                  mainAxisAlignment:
+                                  MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    // Show selected customer name and ID if available, otherwise prompt to select a customer
+                                    Text(
+                                      list['quotation']
+                                      ['street'] ??
+                                          '--',
+                                      //  (ID: $customerId)
+                                      style: const TextStyle(
+                                          fontSize: 16, color: Colors.black87),
+                                    )
 
+                                    // "cellolar": null,
+                                    // "street": null,
+                                    // "city": null,
+                                    // "state": null,
+                                    // "country": null,
+                                    // "zip_code": null,
+                                    // "ship_street": null,
+                                    // "ship_city": null,
+                                    // "ship_state": null,
+                                    // "ship_country": null,
+                                    // "ship_zip_code": null
 
-              ),
-                  ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
 
-    ),
+                  ],
+                );
+              }
+            }):SizedBox.shrink(),
+
+          ]
+        ),
+      ),
+      bottomNavigationBar: Container(
+        height: 90,
+        decoration: const BoxDecoration(color: Colors.white),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10),
+          child:
+          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+             Text(''),
+            ButtonBS(
+                title: 'Place Order',
+                textColor: Colors.white,
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                width: width * 0.35,
+                height: height * 0.04,
+                padding: 5.0,
+                backgroundColor: AppColors.blues,
+                borderRadius: 12,
+                suffixIcon: Icons.arrow_forward_ios,
+                suffixIconColor: Colors.white,
+                suffixIconSize: 18,
+                prefixIconSize: 0,
+                separateSuffixIcon: 5,
+                onPressed: () async {},
+                  // final id = prefs.getInt('id');
+                  // if (customerId == null) {
+                  //   Fluttertoast.showToast(
+                  //     msg: "Please Select Customer",
+                  //     toastLength: Toast.LENGTH_SHORT,
+                  //     gravity: ToastGravity.CENTER,
+                  //     backgroundColor: Colors.orange.shade100,
+                  //     textColor: Colors.black,
+                  //     fontSize: 16.0,
+                  //   );
+                  //   return;
+                  // }
+                  // final body = {
+                  //   "customerId": customerId,
+                  //   "userId": id,
+                  //   "branch": 1
+                  // };
+                  // var response = await cartController.PostOrder(
+                  //     context, body, customerId!);
+                  // var decodedValue = response;
+                  //
+                  // if (decodedValue['success'] == true) {
+                  //   Fluttertoast.showToast(
+                  //     msg: "Your order was placed successfully",
+                  //     toastLength: Toast.LENGTH_SHORT,
+                  //     gravity: ToastGravity.CENTER,
+                  //     backgroundColor: Colors.green.shade100,
+                  //     textColor: Colors.black,
+                  //     fontSize: 16.0,
+                  //   );
+                  //   // Get.off(() => OrderPlacedScreen());
+                  // } else {
+                  //   Fluttertoast.showToast(
+                  //     msg: response['message'] ??
+                  //         "Something went wrong. Please try again.",
+                  //     toastLength: Toast.LENGTH_SHORT,
+                  //     gravity: ToastGravity.CENTER,
+                  //     backgroundColor: Colors.red.shade100,
+                  //     textColor: Colors.black,
+                  //     fontSize: 16.0,
+                  //   );
+                  // }
+                )
+          ]),
+        ),
+      ),
     );
-            });
-      }
-    })
-    ),
-        ]));
   }
 }

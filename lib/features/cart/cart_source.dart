@@ -11,7 +11,7 @@ import '../../../core/error/failure.dart';
 import '../../../core/error/unauth_dilogbox.dart';
 
 abstract class CartRepository {
-  Future<Either<Failure, dynamic>> AddToCart(BuildContext context,String productId, int productQty, String customerId);
+  Future<Either<Failure, dynamic>> AddToCart(BuildContext context,String productId, int productQty, String customerId,String cardcode);
   Future<Either<Failure, dynamic>> fetchcartliost(BuildContext context,String customerId);
   Future<Either<Failure, dynamic>> UpdatetoCart (BuildContext context, Map<String, dynamic> body, int cartId);
   Future<Either<Failure, dynamic>> OrderStore (BuildContext context, Map<String, dynamic> body, String customerId);
@@ -21,15 +21,16 @@ abstract class CartRepository {
 class CartDataSourceImpl implements CartRepository {
 
   @override
-  Future<Either<Failure, dynamic>> AddToCart(BuildContext context, productId,  productQty,  customerId) async {
+  Future<Either<Failure, dynamic>> AddToCart(BuildContext context, productId,  productQty,  customerId,cardcode) async {
     try {
       final headers = await ApiHelper.getHeaders();
       final url = Uri.parse(URLConst.baseURL+URLConst.addTocart);
       print(url);
       final body = {
-        'productId': productId,
-        'quantities': productQty,
+        'productId': "$productId",
+        'cardCode': cardcode,
         'customerId': customerId,
+        'quantities': productQty,
       };
 
       print("$body");
