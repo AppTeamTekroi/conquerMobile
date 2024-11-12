@@ -34,7 +34,7 @@ class _HomeScreenState extends State<HomeScreen> {
     'Quatation',
     'Orders',
     'Invoice',
-    'Credit Note',
+    'Credit',
     'Aging',
   ];
   List<IconData> icons = [

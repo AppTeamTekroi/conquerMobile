@@ -95,10 +95,8 @@ class ProductController extends GetxController {
   var isLoading2 = false.obs;
   var errorMessage2 = ''.obs;
 
-  // Search method with debounce
   void searchProductByName(String query) {
     print(';hitting in controller: $query');
-
     if (query.isEmpty) {
       filteredList.value = productList;
     } else {
@@ -108,10 +106,8 @@ class ProductController extends GetxController {
       }).toList();
     }
 
-    filteredList.refresh(); // Force the UI to refresh
-    update(); // Notify GetX to update the UI
-
-    // Print the filtered list for debugging
+    filteredList.refresh();
+    update();
     print('Filtered List Length: ${filteredList.length}');
     for (var product in filteredList) {
       print('Product Item No: ${product['item_no']}');

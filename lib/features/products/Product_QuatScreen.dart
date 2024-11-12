@@ -134,8 +134,8 @@ class _ProductsState extends State<ProductQuatscreen> {
           textColor: Colors.black,
           fontSize: 16.0,
         );
-      //  await cartController.fetchcartlist(context, widget.customerId!);
-        _fetchProducts();
+        await cartController.fetchcartlist(context, widget.customerId!);
+       // _fetchProducts();
       }else{
         Fluttertoast.showToast(
           msg: "Failed to update cart",
@@ -145,8 +145,8 @@ class _ProductsState extends State<ProductQuatscreen> {
           textColor: Colors.black,
           fontSize: 16.0,
         );
-        _fetchProducts();
-       // await cartController.fetchcartlist(context, widget.customerId!);
+       // _fetchProducts();
+        await cartController.fetchcartlist(context, widget.customerId!);
       }
     } catch (e) {
       Fluttertoast.showToast(

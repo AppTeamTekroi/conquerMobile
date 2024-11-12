@@ -26,8 +26,10 @@ class _QuatationScreentate extends State<QuatationDetailsScreen> {
   String? pdf_file;
   @override
   void initState() {
-    qc.Quatationdetails(context,widget.customerId!);
     super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      qc.Quatationdetails(context, widget.customerId!);
+    });
   }
 
   @override
@@ -70,488 +72,491 @@ class _QuatationScreentate extends State<QuatationDetailsScreen> {
         //   SizedBox(width: 10),
         // ],
       ),
-      body: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 10, vertical: 20),
-        child: Column(
-            children: [
-              // Row(
-              //   children: [
-              //     Container(
-              //         decoration: BoxDecoration(
-              //           // borderRadius: BorderRadius.circular(100),
-              //           // border: Border.all(color: Colors.red.withOpacity(0.4), width: 4),
-              //         ),
-              //         child: Text(
-              //           'COPY FROM QUATATION',
-              //           style: TextStyle(
-              //               color: Colors.green[900],
-              //               fontWeight: FontWeight.w500),
-              //         )),
-              //   ],
-              // ),
-              // SizedBox(height: 8),
-              // Obx(() {
-              //   if (qc.isLoading.value) {
-              //     return Center(child: CircularProgressIndicator());
-              //   } else if (qc.errorMessage.value.isNotEmpty) {
-              //     return Center(child: Text(qc.errorMessage.value));
-              //   } else {
-              //     final dataList = qc.quatationlist.value;
-              //     final list = dataList is Map<dynamic, dynamic> ? dataList : {};
-              //     final employeeOnDuty = list["data"] is List<dynamic> ? list["data"] : [];
-              //
-              //     final Map<String, String> dropdownMap = {
-              //       for (var item in employeeOnDuty)
-              //         '  ${item["id"]}-(${item["customer_webid"]}) - ${item["customer_commonname"]}':
-              //         (item["id"]).toString()
-              //     };
-              //
-              //     // Extract keys (display text) for DropdownSearch items
-              //     final dropdownItems = dropdownMap.keys.toList();
-              //
-              //     return Container(
-              //       width: width,
-              //       decoration:
-              //       BoxDecoration(borderRadius: BorderRadius.circular(9)),
-              //       child: DropdownSearch<String>(
-              //         items: dropdownItems,
-              //         dropdownDecoratorProps: DropDownDecoratorProps(
-              //           dropdownSearchDecoration: InputDecoration(
-              //             hintText: 'Select SQ',
-              //             contentPadding: const EdgeInsets.all(8.0),
-              //             border: OutlineInputBorder(
-              //               borderRadius: BorderRadius.circular(9),
-              //             ),
-              //             enabledBorder: OutlineInputBorder(
-              //               borderRadius: BorderRadius.circular(9),
-              //               borderSide: BorderSide(color: Colors.grey),
-              //             ),
-              //             focusedBorder: OutlineInputBorder(
-              //               borderRadius: BorderRadius.circular(9),
-              //               borderSide: BorderSide(color: Colors.grey),
-              //             ),
-              //             hintStyle: const TextStyle(
-              //                 color: Colors.black, fontWeight: FontWeight.bold),
-              //           ),
-              //         ),
-              //         onChanged: (String? selectedText) async {
-              //           if (selectedText != null) {
-              //             final selectedId = dropdownMap[
-              //             selectedText]; // Get the ID for the selected text
-              //             if (selectedId != null) {
-              //               setState(() {
-              //                 dropdownValue = selectedId;
-              //                 print(selectedId);
-              //               });
-              //               await qc.Quatationdetails(context, selectedId);
-              //             }
-              //           }
-              //         },
-              //         dropdownBuilder: (context, selectedItem) {
-              //           return Text(
-              //             selectedItem ?? 'Select Sales Quotation',
-              //             style: TextStyle(
-              //                 fontWeight: FontWeight.w600),
-              //           );
-              //         },
-              //       ),
-              //     );
-              //   }
-              // }),
-              //dropdownValue != null && dropdownValue!.isNotEmpty?
-              Obx(() {
-                if (qc.isLoading2.value) {
-                  return Center(child: CircularProgressIndicator());
-                } else if (qc.errorMessage2.value.isNotEmpty) {
-                  return Center(child: Text(qc.errorMessage2.value));
-                } else {
-                  final dataList = qc.quatationdetails.value;
-                  final list = dataList is Map<dynamic, dynamic> ? dataList : {};
-                  final map =  list['quotation'];
-                  final items = list["quotation_items"] is List<dynamic>
-                      ? list["quotation_items"]
-                      : [];
-                  pdf_file = list['pdf_file'];
-                  return Stack(
-                    children: [
-                      SingleChildScrollView(
-                        physics: const BouncingScrollPhysics(),
-                        child:
-                        Column(
-                          children: [
-                            const SizedBox(height: 10),
-                            Row(
-                              children: [
-                                Text(
-                                  '⇢ CUSTOMER',
-                                  style: TextStyle(
-                                      color: Colors.orange[900],
-                                      fontWeight: FontWeight.w500),
-                                ),
-                                SizedBox(
-                                  width: 5,
-                                ),
-                                Icon(
-                                  Icons.info,
-                                  size: 18,
-                                  color: Colors.black54,
-                                )
-                              ],
-                            ),
-                            const SizedBox(
-                              height: 5,
-                            ),
-                            Container(
-                              width: width * 1,
-                              height: 50,
-                              padding: const EdgeInsets.symmetric(
-                                  vertical: 10, horizontal: 16),
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(10),
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: EdgeInsets.symmetric(horizontal: 10, vertical: 20),
+          child: Column(
+              children: [
+                // Row(
+                //   children: [
+                //     Container(
+                //         decoration: BoxDecoration(
+                //           // borderRadius: BorderRadius.circular(100),
+                //           // border: Border.all(color: Colors.red.withOpacity(0.4), width: 4),
+                //         ),
+                //         child: Text(
+                //           'COPY FROM QUATATION',
+                //           style: TextStyle(
+                //               color: Colors.green[900],
+                //               fontWeight: FontWeight.w500),
+                //         )),
+                //   ],
+                // ),
+                // SizedBox(height: 8),
+                // Obx(() {
+                //   if (qc.isLoading.value) {
+                //     return Center(child: CircularProgressIndicator());
+                //   } else if (qc.errorMessage.value.isNotEmpty) {
+                //     return Center(child: Text(qc.errorMessage.value));
+                //   } else {
+                //     final dataList = qc.quatationlist.value;
+                //     final list = dataList is Map<dynamic, dynamic> ? dataList : {};
+                //     final employeeOnDuty = list["data"] is List<dynamic> ? list["data"] : [];
+                //
+                //     final Map<String, String> dropdownMap = {
+                //       for (var item in employeeOnDuty)
+                //         '  ${item["id"]}-(${item["customer_webid"]}) - ${item["customer_commonname"]}':
+                //         (item["id"]).toString()
+                //     };
+                //
+                //     // Extract keys (display text) for DropdownSearch items
+                //     final dropdownItems = dropdownMap.keys.toList();
+                //
+                //     return Container(
+                //       width: width,
+                //       decoration:
+                //       BoxDecoration(borderRadius: BorderRadius.circular(9)),
+                //       child: DropdownSearch<String>(
+                //         items: dropdownItems,
+                //         dropdownDecoratorProps: DropDownDecoratorProps(
+                //           dropdownSearchDecoration: InputDecoration(
+                //             hintText: 'Select SQ',
+                //             contentPadding: const EdgeInsets.all(8.0),
+                //             border: OutlineInputBorder(
+                //               borderRadius: BorderRadius.circular(9),
+                //             ),
+                //             enabledBorder: OutlineInputBorder(
+                //               borderRadius: BorderRadius.circular(9),
+                //               borderSide: BorderSide(color: Colors.grey),
+                //             ),
+                //             focusedBorder: OutlineInputBorder(
+                //               borderRadius: BorderRadius.circular(9),
+                //               borderSide: BorderSide(color: Colors.grey),
+                //             ),
+                //             hintStyle: const TextStyle(
+                //                 color: Colors.black, fontWeight: FontWeight.bold),
+                //           ),
+                //         ),
+                //         onChanged: (String? selectedText) async {
+                //           if (selectedText != null) {
+                //             final selectedId = dropdownMap[
+                //             selectedText]; // Get the ID for the selected text
+                //             if (selectedId != null) {
+                //               setState(() {
+                //                 dropdownValue = selectedId;
+                //                 print(selectedId);
+                //               });
+                //               await qc.Quatationdetails(context, selectedId);
+                //             }
+                //           }
+                //         },
+                //         dropdownBuilder: (context, selectedItem) {
+                //           return Text(
+                //             selectedItem ?? 'Select Sales Quotation',
+                //             style: TextStyle(
+                //                 fontWeight: FontWeight.w600),
+                //           );
+                //         },
+                //       ),
+                //     );
+                //   }
+                // }),
+                //dropdownValue != null && dropdownValue!.isNotEmpty?
+                Obx(() {
+                  if (qc.isLoading2.value) {
+                    return Center(child: CircularProgressIndicator());
+                  } else if (qc.errorMessage2.value.isNotEmpty) {
+                    return Center(child: Text(qc.errorMessage2.value));
+                  } else {
+                    final dataList = qc.quatationdetails.value;
+                    final list = dataList is Map<dynamic, dynamic> ? dataList : {};
+                    final map =  list['quotation'];
+                    final items = list["quotation_items"] is List<dynamic>
+                        ? list["quotation_items"]
+                        : [];
+                    pdf_file = list['pdf_file'];
+                    print(map
+                    ['customer_commonname']);
+                    return Stack(
+                      children: [
+                        SingleChildScrollView(
+                          physics: const BouncingScrollPhysics(),
+                          child:
+                          Column(
+                            children: [
+                              const SizedBox(height: 10),
+                              Row(
+                                children: [
+                                  Text(
+                                    '⇢ CUSTOMER',
+                                    style: TextStyle(
+                                        color: Colors.orange[900],
+                                        fontWeight: FontWeight.w500),
+                                  ),
+                                  SizedBox(
+                                    width: 5,
+                                  ),
+                                  Icon(
+                                    Icons.info,
+                                    size: 18,
+                                    color: Colors.black54,
+                                  )
+                                ],
                               ),
-                              child: SingleChildScrollView(
-                                scrollDirection: Axis.horizontal,
-                                child: Row(
-                                  mainAxisAlignment:
-                                  MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    // Show selected customer name and ID if available, otherwise prompt to select a customer
-                                    Text(
-                                      map
-                                      ['customer_commonname'] ??
-                                          '--',
-                                      //  (ID: $customerId)
-                                      style: const TextStyle(
-                                          fontSize: 16, color: Colors.black87),
-                                    )
-                                  ],
-                                ),
+                              const SizedBox(
+                                height: 5,
                               ),
-                            ),
-                            const SizedBox(height: 10),
-                            Row(
-                              children: [
-                                Text(
-                                  ' ⇢  PRODUCTS',
-                                  style: TextStyle(
-                                      color: Colors.orange[900],
-                                      fontWeight: FontWeight.w500),
-                                ),
-                                // SizedBox(
-                                //   width: 5,
-                                // ),
-                                // Icon(
-                                //   Icons.info,
-                                //   size: 18,
-                                //   color: Colors.black54,
-                                // )
-                              ],
-                            ),
-                            const SizedBox(
-                              height: 5,
-                            ),
-                            // Display each item in the quotation_items list
-                            ...items.map((item) {
-
-                              return Container(
-                                margin: const EdgeInsets.only(bottom: 10),
-                                padding: const EdgeInsets.all(10),
-                                decoration: BoxDecoration(
-                                  color: Colors.grey[100],
-                                  borderRadius: BorderRadius.circular(8),
-                                  border: Border.all(color: Colors.grey[300]!),
-                                ),
-                                child:  Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Text(
-                                          item['item_no'] ?? 'N/A',
-                                          style: const TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            color: Colors.black87,
-                                          ),
-                                        ),
-                                        Text(
-                                          "💵 ${item['price'] ?? '- -'}",
-                                          style: TextStyle(
-                                            color: Colors.green,  // Makes both the emoji and price text green
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 5),
-
-                                    Text(
-                                      item['item_desc'] ?? 'No description',
-                                      style: const TextStyle(color: Colors.black54),
-                                    ),
-                                    const SizedBox(height: 10),
-
-                                    Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Text(
-                                          'Qty: ${item['quantity']?.toString() ?? '--'}',
-                                          style: const TextStyle(color: Colors.black87),
-                                        ),
-                                        CommonRichText(
-                                          label: 'GST Rate: ',
-                                          value: item['gst_rate']?.toString() ?? '--',
-                                        ),
-                                        CommonRichText(
-                                          label: 'GST Val: ',
-                                          value: item['gst_value']?.toString() ?? '--',
-                                        ),
-                                      ],
-                                    ),
-
-                                    // GST Details
-
-                                  ],
-                                ),
-
-
-                              );
-                            }).toList(),
-                            Row(
-                              children: [
-                                Text(
-                                  '⇢ Billing Address',
-                                  style: TextStyle(
-                                      color: Colors.orange[900],
-                                      fontWeight: FontWeight.w500),
-                                ),
-                                SizedBox(
-                                  width: 5,
-                                ),
-                                // Icon(
-                                //   Icons,
-                                //   size: 18,
-                                //   color: Colors.black54,
-                                // )
-                              ],
-                            ),
-                            Container(
-                              width: width * 1,
-                              height: 50,
-
-                              padding: const EdgeInsets.symmetric(
-                                  vertical: 10, horizontal: 16),
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: SingleChildScrollView(
-                                scrollDirection: Axis.horizontal,
-                                child: Row(
-                                  mainAxisAlignment:
-                                  MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    // Show selected customer name and ID if available, otherwise prompt to select a customer
-                                    Text(
-                                  '${map["street"] ?? ""},${map["city"] ?? ""}, ${map["state"] ?? ""}, ${map["zip_code"] ?? ""}',
-
-                                  //  (ID: $customerId)
-                                      style: const TextStyle(
-                                          fontSize: 16, color: Colors.black87),
-                                    )
-
-                                    // "cellolar": null,
-                                    // "street": null,
-                                    // "city": null,
-                                    // "state": null,
-                                    // "country": null,
-                                    // "zip_code": null,
-                                    // "ship_street": null,
-                                    // "ship_city": null,
-                                    // "ship_state": null,
-                                    // "ship_country": null,
-                                    // "ship_zip_code": null
-
-                                  ],
-                                ),
-
-                              ),
-                            ),
-
-
-                Row(
-                children: [
-                Text(
-                '⇢ Shipping Address',
-                style: TextStyle(
-                color: Colors.orange[900],
-                fontWeight: FontWeight.w500),
-                ),
-                SizedBox(
-                width: 5,
-                ),
-                // Icon(
-                //   Icons,
-                //   size: 18,
-                //   color: Colors.black54,
-                // )
-                ],
-                ),
-                Container(
-                width: width * 1,
-                height: 50,
-
-                padding: const EdgeInsets.symmetric(
-                vertical: 10, horizontal: 16),
-                decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(10),
-                ),
-                child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                mainAxisAlignment:
-                MainAxisAlignment.spaceBetween,
-                children: [
-                // Show selected customer name and ID if available, otherwise prompt to select a customer
-                Text(
-                '${map["ship_street"] ?? ""},${map["ship_city"] ?? ""}, ${map["ship_state"] ?? ""}, ${map["ship_zip_code"] ?? ""}',
-
-                //  (ID: $customerId)
-                style: const TextStyle(
-                fontSize: 16, color: Colors.black87),
-                )
-
-                // "cellolar": null,
-                // "street": null,
-                // "city": null,
-                // "state": null,
-                // "country": null,
-                // "zip_code": null,
-                // "ship_street": null,
-                // "ship_city": null,
-                // "ship_state": null,
-                // "ship_country": null,
-                // "ship_zip_code": null
-
-                ],
-                ),
-                )
-                ),
-                            Container(
+                              Container(
+                                width: width * 1,
+                                height: 50,
                                 padding: const EdgeInsets.symmetric(
                                     vertical: 10, horizontal: 16),
                                 decoration: BoxDecoration(
                                   color: Colors.white,
                                   borderRadius: BorderRadius.circular(10),
                                 ),
-                                child: Column(
+                                child: SingleChildScrollView(
+                                  scrollDirection: Axis.horizontal,
+                                  child: Row(
                                     mainAxisAlignment:
-                                    MainAxisAlignment.start,
-                                    crossAxisAlignment:CrossAxisAlignment.start,
+                                    MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      // Show selected customer name and ID if available, otherwise prompt to select a customer
+                                      Text(map
+                                        ['customer_commonname'] ??
+                                            '--',
+                                        style: const TextStyle(
+                                            fontSize: 16, color: Colors.black87),
+                                      ),
+
+                                    ],
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 10),
+                              Row(
+                                children: [
+                                  Text(
+                                    ' ⇢  PRODUCTS',
+                                    style: TextStyle(
+                                        color: Colors.orange[900],
+                                        fontWeight: FontWeight.w500),
+                                  ),
+                                  // SizedBox(
+                                  //   width: 5,
+                                  // ),
+                                  // Icon(
+                                  //   Icons.info,
+                                  //   size: 18,
+                                  //   color: Colors.black54,
+                                  // )
+                                ],
+                              ),
+                              const SizedBox(
+                                height: 5,
+                              ),
+                              // Display each item in the quotation_items list
+                              ...items.map((item) {
+
+                                return Container(
+                                  margin: const EdgeInsets.only(bottom: 10),
+                                  padding: const EdgeInsets.all(10),
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey[100],
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(color: Colors.grey[300]!),
+                                  ),
+                                  child:  Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
                                       Row(
-                                        mainAxisAlignment:
-                                        MainAxisAlignment
-                                            .spaceBetween,
+                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                         children: [
-                                          const Text(
-                                              'Code'),
-                                          Text(map[
-                                          "customer_code"] ??
-                                              '- -'
-                                                  .toString()),
+                                          Text(
+                                            item['item_no'] ?? 'N/A',
+                                            style: const TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.black87,
+                                            ),
+                                          ),
+                                          Text(
+                                            "💵 ${item['price'] ?? '- -'}",
+                                            style: TextStyle(
+                                              color: Colors.green,  // Makes both the emoji and price text green
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
                                         ],
                                       ),
+                                      const SizedBox(height: 5),
+
+                                      Text(
+                                        item['item_desc'] ?? 'No description',
+                                        style: const TextStyle(color: Colors.black54),
+                                      ),
+                                      const SizedBox(height: 10),
 
                                       Row(
-                                        mainAxisAlignment:
-                                        MainAxisAlignment
-                                            .spaceBetween,
+                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                         children: [
-                                          const Text(
-                                              'Payment'),
-                                          Text(map[
-                                          "payment_term"] ??
-                                              '- -'
-                                                  .toString()),
-                                        ],
-                                      ),Row(
-                                        mainAxisAlignment:
-                                        MainAxisAlignment
-                                            .spaceBetween,
-                                        children: [
-                                          const Text(
-                                              'SQ-ON'),
-                                          Text(map[
-                                          "quotation_date"] ??
-                                              '- -'
-                                                  .toString()),
-                                        ],
-                                      ),Row(
-                                        mainAxisAlignment:
-                                        MainAxisAlignment
-                                            .spaceBetween,
-                                        children: [
-                                          const Text(
-                                              'Valid Till'),
-                                          Text(map[
-                                          "valid_till"] ??
-                                              '- -'
-                                                  .toString()),
+                                          Text(
+                                            'Qty: ${item['quantity']?.toString() ?? '--'}',
+                                            style: const TextStyle(color: Colors.black87),
+                                          ),
+                                          CommonRichText(
+                                            label: 'GST Rate: ',
+                                            value: item['gst_rate']?.toString() ?? '--',
+                                          ),
+                                          CommonRichText(
+                                            label: 'GST Val: ',
+                                            value: item['gst_value']?.toString() ?? '--',
+                                          ),
                                         ],
                                       ),
-                                      Row(
-                                        mainAxisAlignment:
-                                        MainAxisAlignment
-                                            .spaceBetween,
-                                        children: [
-                                          const Text(
-                                              'Contact To'),
-                                          Text(map[
-                                          "contact_name"] ??
-                                              '- -'
-                                                  .toString()),
-                                        ],
-                                      ),
-                                      Row(
-                                        mainAxisAlignment:
-                                        MainAxisAlignment
-                                            .spaceBetween,
-                                        children: [
-                                          const Text(
-                                              'Cell'),
-                                          Text(map[
-                                          "cellolar"] ??
-                                              '- -'
-                                                  .toString()),
-                                        ],
-                                      ),
-                                      CommonRichText(
-                                        label: 'Remarks: ',
-                                        value: map["remarks"] ?? '- -',
-                                      ),
-                                      CommonRichText(
-                                        label: 'Delivery Terms: ',
-                                        value: map["delivery_term"] ?? '- -',
-                                      ),
+
+                                      // GST Details
+
+                                    ],
+                                  ),
+
+
+                                );
+                              }).toList(),
+                              Row(
+                                children: [
+                                  Text(
+                                    '⇢ Billing Address',
+                                    style: TextStyle(
+                                        color: Colors.orange[900],
+                                        fontWeight: FontWeight.w500),
+                                  ),
+                                  SizedBox(
+                                    width: 5,
+                                  ),
+                                  // Icon(
+                                  //   Icons,
+                                  //   size: 18,
+                                  //   color: Colors.black54,
+                                  // )
+                                ],
+                              ),
+                              Container(
+                                width: width * 1,
+                                height: 50,
+
+                                padding: const EdgeInsets.symmetric(
+                                    vertical: 10, horizontal: 16),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: SingleChildScrollView(
+                                  scrollDirection: Axis.horizontal,
+                                  child: Row(
+                                    mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      // Show selected customer name and ID if available, otherwise prompt to select a customer
+                                      Text(
+                                    '${map["street"] ?? ""},${map["city"] ?? ""}, ${map["state"] ?? ""}, ${map["zip_code"] ?? ""}',
+
+                                    //  (ID: $customerId)
+                                        style: const TextStyle(
+                                            fontSize: 16, color: Colors.black87),
+                                      )
+
+                                      // "cellolar": null,
+                                      // "street": null,
+                                      // "city": null,
+                                      // "state": null,
+                                      // "country": null,
+                                      // "zip_code": null,
+                                      // "ship_street": null,
+                                      // "ship_city": null,
+                                      // "ship_state": null,
+                                      // "ship_country": null,
+                                      // "ship_zip_code": null
+
+                                    ],
+                                  ),
+
+                                ),
+                              ),
+
+
+                  Row(
+                  children: [
+                  Text(
+                  '⇢ Shipping Address',
+                  style: TextStyle(
+                  color: Colors.orange[900],
+                  fontWeight: FontWeight.w500),
+                  ),
+                  SizedBox(
+                  width: 5,
+                  ),
+                  // Icon(
+                  //   Icons,
+                  //   size: 18,
+                  //   color: Colors.black54,
+                  // )
+                  ],
+                  ),
+                  Container(
+                  width: width * 1,
+                  height: 50,
+
+                  padding: const EdgeInsets.symmetric(
+                  vertical: 10, horizontal: 16),
+                  decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                  mainAxisAlignment:
+                  MainAxisAlignment.spaceBetween,
+                  children: [
+                  // Show selected customer name and ID if available, otherwise prompt to select a customer
+                  Text(
+                  '${map["ship_street"] ?? ""},${map["ship_city"] ?? ""}, ${map["ship_state"] ?? ""}, ${map["ship_zip_code"] ?? ""}',
+
+                  //  (ID: $customerId)
+                  style: const TextStyle(
+                  fontSize: 16, color: Colors.black87),
+                  )
+
+                  // "cellolar": null,
+                  // "street": null,
+                  // "city": null,
+                  // "state": null,
+                  // "country": null,
+                  // "zip_code": null,
+                  // "ship_street": null,
+                  // "ship_city": null,
+                  // "ship_state": null,
+                  // "ship_country": null,
+                  // "ship_zip_code": null
+
+                  ],
+                  ),
+                  )
+                  ),
+                              Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      vertical: 10, horizontal: 16),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: Column(
+                                      mainAxisAlignment:
+                                      MainAxisAlignment.start,
+                                      crossAxisAlignment:CrossAxisAlignment.start,
+                                      children: [
+                                        Row(
+                                          mainAxisAlignment:
+                                          MainAxisAlignment
+                                              .spaceBetween,
+                                          children: [
+                                            const Text(
+                                                'Code'),
+                                            Text(map[
+                                            "customer_code"] ??
+                                                '- -'
+                                                    .toString()),
+                                          ],
+                                        ),
+
+                                        Row(
+                                          mainAxisAlignment:
+                                          MainAxisAlignment
+                                              .spaceBetween,
+                                          children: [
+                                            const Text(
+                                                'Payment'),
+                                            Text(map[
+                                            "payment_term"] ??
+                                                '- -'
+                                                    .toString()),
+                                          ],
+                                        ),Row(
+                                          mainAxisAlignment:
+                                          MainAxisAlignment
+                                              .spaceBetween,
+                                          children: [
+                                            const Text(
+                                                'SQ-ON'),
+                                            Text(map[
+                                            "quotation_date"] ??
+                                                '- -'
+                                                    .toString()),
+                                          ],
+                                        ),Row(
+                                          mainAxisAlignment:
+                                          MainAxisAlignment
+                                              .spaceBetween,
+                                          children: [
+                                            const Text(
+                                                'Valid Till'),
+                                            Text(map[
+                                            "valid_till"] ??
+                                                '- -'
+                                                    .toString()),
+                                          ],
+                                        ),
+                                        Row(
+                                          mainAxisAlignment:
+                                          MainAxisAlignment
+                                              .spaceBetween,
+                                          children: [
+                                            const Text(
+                                                'Contact To'),
+                                            Text(map[
+                                            "contact_name"] ??
+                                                '- -'
+                                                    .toString()),
+                                          ],
+                                        ),
+                                        Row(
+                                          mainAxisAlignment:
+                                          MainAxisAlignment
+                                              .spaceBetween,
+                                          children: [
+                                            const Text(
+                                                'Cell'),
+                                            Text(map[
+                                            "cellolar"] ??
+                                                '- -'
+                                                    .toString()),
+                                          ],
+                                        ),
+                                        CommonRichText(
+                                          label: 'Remarks: ',
+                                          value: map["remarks"] ?? '- -',
+                                        ),
+                                        CommonRichText(
+                                          label: 'Delivery Terms: ',
+                                          value: map["delivery_term"] ?? '- -',
+                                        ),
 
 
 
 
-                                    ])
-                            ),
-                          ],
+                                      ])
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
 
-                    ],
-                  );
-                }
-              }),
+                      ],
+                    );
+                  }
+                }),
 
-            ]
+              ]
+          ),
         ),
       ),
       bottomNavigationBar: Container(
