@@ -20,17 +20,38 @@ class CustomerScreen extends StatefulWidget {
 }
 
 class _CustomerScreenState extends State<CustomerScreen> {
-  final CustomerController customerController = Get.put(CustomerController());
-
-  String searchQuery = '';
+  final CustomerController customerController = Get.find();
+  final ScrollController _scrollController = ScrollController();
+  // String searchQuery = '';
   @override
   void initState() {
     super.initState();
-    _fetchData();
+    customerController.searchQuery.value = '';
+    // _fetchData();
+    _scrollController.addListener(_scrollListener);
   }
 
   Future<void> _fetchData() async {
-    await customerController.fetchUser(context);
+    // await customerController.fetchUser(context, isPagination: false);
+  }
+
+  void _scrollListener() {
+    if (_scrollController.position.pixels >=
+            _scrollController.position.maxScrollExtent - 100 &&
+        !customerController.isLoadingMore.value &&
+        !customerController.isLastPage.value) {
+      _loadMoreItems();
+    }
+  }
+
+  Future<void> _loadMoreItems() async {
+    await customerController.fetchUser( isPagination: true);
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
   }
 
   @override
@@ -74,12 +95,23 @@ class _CustomerScreenState extends State<CustomerScreen> {
                           color: Colors.grey,
                         ),
                 ),
-
               ),
               onChanged: (val) {
                 print(';hitting in page');
-                customerController.searchProductByName(val);
+
+                 if(val.length > 5) {
+                   customerController.searchQuery.value = val;
+
+                   _fetchData();
+                 }
+                // customerController.filteredcust.value = customerController.customerslist
+                // .where((item) => item["card_name"]
+                // .toLowerCase()
+                // .contains(val.toLowerCase()))
+                // .toList();
               },
+              //   customerController.searchProductByName(val);
+              // },
             ),
           ),
           // actions: [
@@ -225,19 +257,46 @@ class _CustomerScreenState extends State<CustomerScreen> {
                   );
                 }
                 return ListView.builder(
-                  itemCount: customerController.filteredcust.length,
+                  controller: _scrollController,
+
+//                   itemCount: customerController.filteredcust.length,
+//                   itemBuilder: (context, index) {
+//                     final item = customerController.filteredcust[index];
+//                     final int itemId = item['id'];
+
+                  itemCount: customerController.filteredcust.length +
+                      (customerController.isLoadingMore.value ? 1 : 0),
                   itemBuilder: (context, index) {
+                    if (index == customerController.filteredcust.length) {
+                      return Center(child: CircularProgressIndicator());
+                    }
                     final item = customerController.filteredcust[index];
                     final int itemId = item['id'];
+
                     return GestureDetector(
                       onTap: () {
                         if (widget.fromQuotation) {
-                          Get.back(result: {
-                            'id': item['id'],
-                            'name': item['card_name'],
-                            'cardcode': item['web_id'],
-                            'email':item['e_mail']
-                          });
+                          // Get.back(result: {
+                          //   'id': item['id'],
+                          //   'name': item['card_name'],
+                          //   'sales_emp_name': item['sales_emp_name'],
+                          //   'salesEmployee':item['salesEmp_Name'] ?? null,
+                          //   'cardcode': item['web_id'],
+                          //   'email': item['e_mail']?? null,
+                          //   'payment_terms':item['payment_terms'],
+                          // });
+
+                          if (Get.key.currentState?.canPop() ?? false) {
+                            Get.back(result: {
+                              'id': item['id'],
+                              'name': item['card_name'],
+                              'sales_emp_name': item['sales_emp_name'],
+                              'salesEmployee': item['salesEmp_Name'],
+                              'cardcode': item['web_id'],
+                              'email': item['e_mail'],
+                              'payment_terms': item['payment_terms'],
+                            });
+                          }
                         }
                       },
                       child: Card(
@@ -304,7 +363,7 @@ class _CustomerScreenState extends State<CustomerScreen> {
                                     children: [
                                       CommonRichText(
                                         label: 'Email: ',
-                                        value: item["e_mail"] ?? '- -',
+                                        value: item["mail_address"] ?? '- -',
                                       ),
 
                                       // Text(
@@ -321,17 +380,16 @@ class _CustomerScreenState extends State<CustomerScreen> {
                                       // ),
                                     ],
                                   ),
+                                  CommonRichText(
+                                    label: 'Sales Emp: ',
+                                    value: item["salesEmp_Name"] ?? '- -',
+                                  ),
                                   Row(
                                     mainAxisAlignment:
                                         MainAxisAlignment.spaceBetween,
                                     children: [
-                                      // CommonRichText(
-                                      //   label: 'Sales Emp: ',
-                                      //   value: item["sales_emp_name"] ?? '- -',
-                                      // ),
-
                                       Text(
-                                        "📞 ${item["cellular"] ?? '- -'}",
+                                        "📞 ${item["phone1"] ?? '- -'}",
                                         style: TextStyle(
                                           fontSize: 14,
                                           color: Colors.green[900],
@@ -375,3 +433,115 @@ class _CustomerScreenState extends State<CustomerScreen> {
     );
   }
 }
+
+//
+// import 'package:flutter/material.dart';
+// import 'package:get/get.dart';
+// import 'package:shimmer/shimmer.dart';
+// import 'package:vconquer/features/customers/customer_controller.dart';
+// import 'AddCustomer_screen.dart';
+// import '../../../ui/color/appColor.dart';
+// class CustomerScreen extends StatefulWidget {
+//   final bool fromQuotation;
+//
+//   const CustomerScreen({super.key, required this.fromQuotation});
+//
+//   @override
+//   State<CustomerScreen> createState() => _CustomerScreenState();
+// }
+//
+// class _CustomerScreenState extends State<CustomerScreen> {
+//   final CustomerController customerController = Get.put(CustomerController());
+//   final ScrollController _scrollController = ScrollController();
+//
+//   @override
+//   void initState() {
+//     super.initState();
+//     _fetchData();
+//     _scrollController.addListener(_scrollListener);
+//   }
+//
+//   Future<void> _fetchData() async {
+//     await customerController.fetchUser(context, isPagination: false);
+//   }
+//
+//   void _scrollListener() {
+//     if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 100 &&
+//         !customerController.isLoadingMore.value &&
+//         !customerController.isLastPage.value) {
+//       _loadMoreItems();
+//     }
+//   }
+//
+//   Future<void> _loadMoreItems() async {
+//     await customerController.fetchUser(context, isPagination: true);
+//   }
+//
+//   @override
+//   void dispose() {
+//     _scrollController.dispose();
+//     super.dispose();
+//   }
+//
+//   @override
+//   Widget build(BuildContext context) {
+//     return Scaffold(
+//       backgroundColor: AppColors.primary,
+//       appBar: AppBar(
+//         backgroundColor: AppColors.white,
+//         title: TextField(
+//           decoration: InputDecoration(
+//             hintText: "Search Customers",
+//             border: InputBorder.none,
+//             suffixIcon: Obx(() => customerController.filteredcust.isNotEmpty
+//                 ? Padding(
+//               padding: const EdgeInsets.only(left: 8, right: 8),
+//               child: Text('Search', style: TextStyle(fontSize: 15)),
+//             )
+//                 : Icon(Icons.search, color: Colors.grey)),
+//           ),
+//           onChanged: (val) {
+//             customerController.filteredcust.value = customerController.customerslist
+//                 .where((item) => item["card_name"]
+//                 .toLowerCase()
+//                 .contains(val.toLowerCase()))
+//                 .toList();
+//           },
+//         ),
+//       ),
+//       body: Column(
+//         children: [
+//           Obx(() {
+//             if (customerController.isLoading.value) {
+//               return Center(child: CircularProgressIndicator());
+//             } else if (customerController.errorMessage.value.isNotEmpty) {
+//               return Center(child: Text(customerController.errorMessage.value));
+//             } else {
+//               return Expanded(
+//                 child: ListView.builder(
+//                   controller: _scrollController,
+//                   itemCount: customerController.filteredcust.length +
+//                       (customerController.isLoadingMore.value ? 1 : 0),
+//                   itemBuilder: (context, index) {
+//                     if (index == customerController.filteredcust.length) {
+//                       return Center(child: CircularProgressIndicator());
+//                     }
+//                     final item = customerController.filteredcust[index];
+//                     return Card(
+//                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+//                       child: ListTile(
+//                         title: Text("Code: ${item["web_id"]}"),
+//                         subtitle: Text("Email: ${item["e_mail"] ?? '- -'}"),
+//                         trailing: Icon(Icons.arrow_forward_ios, size: 14),
+//                       ),
+//                     );
+//                   },
+//                 ),
+//               );
+//             }
+//           }),
+//         ],
+//       ),
+//     );
+//   }
+// }

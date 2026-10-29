@@ -11,29 +11,31 @@ import '../../../core/error/failure.dart';
 import '../../../core/error/unauth_dilogbox.dart';
 
 abstract class ProductRepository {
-  Future<Either<Failure, dynamic>> fetchproducts(BuildContext context);
-  Future<Either<Failure, dynamic>> fetchQuatationproducts(BuildContext context,String customerId
+  Future<Either<Failure, dynamic>> fetchproducts();
+  Future<Either<Failure, dynamic>> fetchQuatationproducts(String customerId,int page,String searchQuery
       );
 
 }
 class ProductDataSourceImpl implements ProductRepository {
   @override
-  Future<Either<Failure, dynamic>> fetchproducts(BuildContext context) async {
+  Future<Either<Failure, dynamic>> fetchproducts() async {
     try {
       final headers = await ApiHelper.getHeaders();
       final response = await http.get(
         Uri.parse(URLConst.baseURL + URLConst.products),
+       // Uri.parse ('http://127.0.0.1:8000/api/get-cust-items-price/5?per_page=10&search='),
+
         headers: headers,
       );
       if (response.statusCode == 401) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Unauthorized access'),
-            duration: Duration(seconds: 3),
-            backgroundColor: Colors.red,
-          ),
-        );
-        UnauthDilogbox(); // Call your custom dialog here if needed.
+        // ScaffoldMessenger.of(context).showSnackBar(
+        //   SnackBar(
+        //     content: Text('Unauthorized access'),
+        //     duration: Duration(seconds: 3),
+        //     backgroundColor: Colors.red,
+        //   ),
+        // );
+        // UnauthDilogbox(); // Call your custom dialog here if needed.
         return Left(Failure(
           statusCode: 401,
           message: 'Unauthorized access',
@@ -42,7 +44,9 @@ class ProductDataSourceImpl implements ProductRepository {
 
       if (response.statusCode == 200) {
         print("List fetched: ${response.body}");
-        final List<dynamic> jsonResponse = json.decode(response.body);
+       final List<dynamic> jsonResponse = json.decode(response.body);
+       // final Map<String, dynamic> jsonResponse = json.decode(response.body);
+
         return Right(jsonResponse);
       } else {
         return Left(Failure(
@@ -58,22 +62,29 @@ class ProductDataSourceImpl implements ProductRepository {
     }
   }
   @override
-  Future<Either<Failure, dynamic>> fetchQuatationproducts(BuildContext context,customerId) async {
+  Future<Either<Failure, dynamic>> fetchQuatationproducts(customerId,page,searchQuery) async {
     try {
+     // print(URLConst.baseURL + URLConst.products_quat+customerId);
+
       final headers = await ApiHelper.getHeaders();
       final response = await http.get(
-        Uri.parse(URLConst.baseURL + URLConst.products_quat+customerId),
+        Uri.parse ('http://127.0.0.1:8000/api/get-cust-items-price/$customerId?page=$page&search=$searchQuery'),
+
+       // {{conquer_site_path}}/get-cust-items-price/5?per_page=5
+      //  Uri.parse ('http://127.0.0.1:8000/api/get-cust-items-price/2?page=1'),
+      //  Uri.parse(URLConst.baseURL + URLConst.products_quat+customerId),
         headers: headers,
       );
+//+'?page=$page'
       if (response.statusCode == 401) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Unauthorized access'),
-            duration: Duration(seconds: 3),
-            backgroundColor: Colors.red,
-          ),
-        );
-        UnauthDilogbox(); // Call your custom dialog here if needed.
+        // ScaffoldMessenger.of(context).showSnackBar(
+        //   SnackBar(
+        //     content: Text('Unauthorized access'),
+        //     duration: Duration(seconds: 3),
+        //     backgroundColor: Colors.red,
+        //   ),
+        // );
+        // UnauthDilogbox(); // Call your custom dialog here if needed.
         return Left(Failure(
           statusCode: 401,
           message: 'Unauthorized access',
@@ -81,13 +92,15 @@ class ProductDataSourceImpl implements ProductRepository {
       }
 
       if (response.statusCode == 200) {
-        print("List fetched: ${response.body}");
-        final List<dynamic> jsonResponse = json.decode(response.body);
+        print("Procts for placing List fetched: ${response.body}");
+        final Map<String, dynamic> jsonResponse = json.decode(response.body);
+
+       // final List<dynamic> jsonResponse = json.decode(response.body);
         return Right(jsonResponse);
       } else {
         return Left(Failure(
           statusCode: response.statusCode,
-          message: 'Failed to fetch customers data',
+          message: 'Failed to fetch product data',
         ));
       }
     } catch (e) {

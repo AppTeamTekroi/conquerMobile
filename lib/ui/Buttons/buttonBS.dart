@@ -1,4 +1,5 @@
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 
 class ButtonBS extends StatelessWidget {
   final String title;
@@ -20,6 +21,9 @@ class ButtonBS extends StatelessWidget {
   final IconData? suffixIcon;
   final Color? suffixIconColor;
   final double? suffixIconSize;
+  final Color? bordercolor;
+
+
   const ButtonBS({
     Key? key,
     required this.title,
@@ -41,6 +45,7 @@ class ButtonBS extends StatelessWidget {
     this.suffixIcon,
     this.suffixIconColor,
     this.suffixIconSize,
+    this.bordercolor = null,
   }) : super(key: key);
 
   @override
@@ -54,7 +59,10 @@ class ButtonBS extends StatelessWidget {
         padding: EdgeInsets.all(padding??0),
         decoration: BoxDecoration(
             color: backgroundColor,
-            borderRadius: BorderRadius.circular(borderRadius)),
+            borderRadius: BorderRadius.circular(borderRadius),
+            border: Border.all(color: bordercolor ?? Colors.white, // Set border color
+            ),
+        ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [

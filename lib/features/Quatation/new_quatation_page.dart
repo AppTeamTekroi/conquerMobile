@@ -1,20 +1,29 @@
+import 'dart:io';
+
 import 'package:dropdown_search/dropdown_search.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:vconquer/features/Quatation/quatationlst_Screen.dart';
+import 'package:vconquer/features/Opportunities/Opportunities.dart';
+import 'package:vconquer/features/Quatation/Quotations.dart';
+import 'package:vconquer/features/Quatation/quatation_controller.dart';
 import 'package:vconquer/features/customers/customer_controller.dart';
 import 'package:vconquer/features/customers/customer_screen.dart';
 import 'package:vconquer/features/filters_dropdown/dropdown_controller.dart';
-import 'package:vconquer/features/homescreen.dart';
+import 'package:vconquer/features/HomeScreen/homescreen.dart';
 import 'package:vconquer/features/navBar.dart';
 import 'package:vconquer/features/products/Products.dart';
 import 'package:vconquer/ui/CommonWidget.dart';
 import '../../ui/Buttons/buttonBS.dart';
+import '../../ui/ResponseDialogBox.dart';
+import '../../ui/assets/loading.dart';
+import '../../ui/bottomsheet_cart_widget.dart';
 import '../../ui/color/appColor.dart';
+import '../../ui/loading.dart';
 import '../../ui/richtext.dart';
 import '../../ui/textfieldWidget.dart';
 
@@ -31,15 +40,16 @@ class NewQuotationScreen extends StatefulWidget {
 
 class _QuotationScreenState extends State<NewQuotationScreen> {
   bool isExpanded = false;
-  ProductController pc = Get.put(ProductController());
-  DropdownController dc = Get.put(DropdownController());
+  ProductController pc = Get.find();
+  DropdownController dc = Get.find();
+  QuatationController qc = Get.find();
   final TextEditingController _dateController = TextEditingController();
   final TextEditingController remarks = TextEditingController();
   final TextEditingController deliveryterms = TextEditingController();
   final TextEditingController otherterms = TextEditingController();
 
   String? branch;
-  String? sales_employee;
+  String? selectedsalesemployee;
   String? category;
   String? sub_category;
   String? country;
@@ -50,28 +60,61 @@ class _QuotationScreenState extends State<NewQuotationScreen> {
   var bill_id = ''.obs;
   var ship_id = ''.obs;
   var contact = ''.obs;
-  var selectedterm = ''.obs;
+  String? selectedterm;
 
   bool _other = false;
   bool _address = false;
   bool _addition = false;
   bool _sales_form = false;
 
+  var opp_type = "".obs;
+  var opp_renewType = "".obs;
+  var warranty = "".obs;
+  var delivery = "".obs;
+  var validity = "".obs;
+  var tax = "".obs;
+
+ // File? selectedFile;
+  late File selectedFile = File(''); // Default empty file
+
+  String pickedFileName = '';
+  bool filePicked = false;
 
   int _charCount = 0;
+  List<String> opp_type_drop = <String>['New Bussiness', 'Renewal', 'Reopen'];
+  List<String> oppRenewal_type_drop = <String>[
+    'iPad',
+    'iPhone',
+    'iPad Pro',
+    'Macbook',
+    'MBP',
+    'MacLaptops',
+    'Kiran Photography',
+    'IT Infra - Laptop',
+    'Single Customer'
+  ];
+  List<String> tax_drop = <String>['GST @ 18% Inclusive', 'GST @ 18% Exclusive', 'SEZ'];
 
+  final TextEditingController opp_name = TextEditingController();
+  final TextEditingController opp_subtype = TextEditingController();
+  final TextEditingController freight = TextEditingController();
   @override
   void initState() {
     super.initState();
+    cartController.cartitems.clear();
     _getBranch();
+    clear();
     // dc.fetchsalesEmpName(context);
     // dc.fetchcategories(context);
     // dc.fetchsubCategories(context);
-    dc.fetchbranches(context);
-    dc.fetchcountries(context);
-    dc.fetchpayterm(context);
-
-    DateTime validTillDate = DateTime.now().add(Duration(days: 7));
+    // dc.fetchbranches(context);
+    // dc.fetchcountries(context);
+   // dc.fetchpayterm(context);
+    dc.fetchwarrenty(context);
+    dc.fetchdelivery(context);
+    dc.fetchvalidity(context);
+    DateTime validTillDate = DateTime.now();
+        //.add(Duration(days: 7));
 
     // Format the date as YYYY-MM-DD
     String formattedDate = "${validTillDate.year}-${validTillDate.month.toString().padLeft(2, '0')}-${validTillDate.day.toString().padLeft(2, '0')}";
@@ -83,9 +126,16 @@ class _QuotationScreenState extends State<NewQuotationScreen> {
     print("Current Date: ${DateTime.now()}");
     print("Valid Till Date: $validTillDate");// Debug print to check the value
   }
-
+  void clear(){
+    opp_type.value = '';
+    opp_renewType.value= '';
+    bill_id.value= '';
+    ship_id.value= '';
+    pickedFileName= '';
+    total.value= '';
+  }
   Future<void> getcontact(customerId) async {
-    await dc.fetchcontact(context, customerId!);
+  //  await dc.fetchcontact(context, customerId!);
     await dc.fetchshipping(context, customerId);
     await dc.fetchbilling(context, customerId);
   }
@@ -101,14 +151,16 @@ class _QuotationScreenState extends State<NewQuotationScreen> {
     expand.value = !expand.value;
   }
 
-  CustomerController customerController = Get.put(CustomerController());
-  CartController cartController = Get.put(CartController());
+  CustomerController customerController = Get.find();
+  CartController cartController = Get.find();
   String? customerId;
   String? selectedCustomerName;
   String? selectedcardcode;
   String? selectedemail;
   double tax_total = 0.00;
   double discount = 0.00;
+  String? saleEmployee;
+
   bool _dialogShown = false;
   var _ontapproduct = false.obs;
   var total = '0.00'.obs;
@@ -123,6 +175,7 @@ class _QuotationScreenState extends State<NewQuotationScreen> {
     String currentDate = DateFormat('dd-MM-yyyy').format(DateTime.now());
 
     return Scaffold(
+
       backgroundColor: AppColors.primary,
       appBar: AppBar(
         backgroundColor: AppColors.white,
@@ -165,6 +218,8 @@ class _QuotationScreenState extends State<NewQuotationScreen> {
                         Navigator.pop(context);
                         //Get.off(() => BottomNav());
                         Get.back();
+                        cartController.clear();
+
                         // pc.clearDetails();
                         // Navigator.of(context)
                         //   ..pop(true)..pop();
@@ -285,22 +340,26 @@ class _QuotationScreenState extends State<NewQuotationScreen> {
                     const SizedBox(
                       height: 5,
                     ),
+
                     GestureDetector(
                       onTap: () async {
                         final selectedCustomer = await Get.to(
-                            () => CustomerScreen(fromQuotation: true));
+                                () => CustomerScreen(fromQuotation: true));
 
                         if (selectedCustomer != null) {
                           setState(() {
                             customerId = selectedCustomer['id'].toString();
                             selectedCustomerName = selectedCustomer['name'];
+                            selectedsalesemployee = selectedCustomer['sales_emp_name'];
+                            saleEmployee = selectedCustomer['salesEmployee'];
                             selectedcardcode = selectedCustomer['cardcode'];
                             selectedemail = selectedCustomer['email'];
+                            selectedterm = selectedCustomer['payment_terms'];
                           });
                           print(selectedCustomer['customer']);
                           print(selectedCustomer['name']);
                           getcontact(customerId);
-                          await cartController.fetchcartlist(
+                          await cartController.order_fetchcartlist(
                               context, customerId!);
                         }
                       },
@@ -321,43 +380,42 @@ class _QuotationScreenState extends State<NewQuotationScreen> {
                               // Show selected customer name and ID if available, otherwise prompt to select a customer
                               selectedCustomerName != null
                                   ? Text(
-                                      '$selectedCustomerName ',
-                                      //  (ID: $customerId)
-                                      style: const TextStyle(
-                                          fontSize: 16, color: Colors.black87),
-                                    )
+                                '$selectedCustomerName ',
+                                //  (ID: $customerId)
+                                style: const TextStyle(
+                                    fontSize: 16, color: Colors.black87),
+                              )
                                   : Row(children: [
-                                      Container(
-                                        padding: const EdgeInsets.all(
-                                            2), // Adjust padding to control the size of the circle
-                                        decoration: BoxDecoration(
-                                          shape: BoxShape
-                                              .circle, // Make the container circular
-                                          color: AppColors
-                                              .blues, // Circle background color
-                                        ),
-                                        child: Icon(
-                                          Icons.add,
-                                          size: 12,
-                                          color: AppColors.white, // Icon color
-                                        ),
-                                      ),
-                                      SizedBox(
-                                        width: 8,
-                                      ),
-                                      Text(
-                                        'Select Customer',
-                                        style: TextStyle(
-                                            fontSize: 16,
-                                            color: AppColors.blues),
-                                      ),
-                                    ]),
+                                Container(
+                                  padding: const EdgeInsets.all(
+                                      2), // Adjust padding to control the size of the circle
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape
+                                        .circle, // Make the container circular
+                                    color: AppColors
+                                        .blues, // Circle background color
+                                  ),
+                                  child: Icon(
+                                    Icons.add,
+                                    size: 12,
+                                    color: AppColors.white, // Icon color
+                                  ),
+                                ),
+                                SizedBox(
+                                  width: 8,
+                                ),
+                                Text(
+                                  'Select Customer',
+                                  style: TextStyle(
+                                      fontSize: 16,
+                                      color: AppColors.blues),
+                                ),
+                              ]),
                             ],
                           ),
                         ),
                       ),
                     ),
-
                     SizedBox(
                       height: 10,
                     ),
@@ -382,10 +440,7 @@ class _QuotationScreenState extends State<NewQuotationScreen> {
                       height: 5,
                     ),
 
-
-
-
-                        Obx(() {
+                    Obx(() {
                           if(cartController.cartitems.isNotEmpty) {
                             if (cartController.totalorder.value > 0) {
                               // if (cartController.isLoading1.value) {
@@ -633,37 +688,7 @@ class _QuotationScreenState extends State<NewQuotationScreen> {
                                                         ),
                                                         Row(
                                                           children: [
-                                                            GestureDetector(
-                                                              onTap: () async {
-                                                                _showDiscountBottomSheet(
-                                                                    item,
-                                                                    item['product']
-                                                                    [
-                                                                    "name"]);
-                                                              },
-                                                              child:
-                                                              const Padding(
-                                                                padding: EdgeInsets
-                                                                    .only(
-                                                                    right:
-                                                                    5.0),
-                                                                child: Align(
-                                                                  alignment:
-                                                                  Alignment
-                                                                      .centerRight,
-                                                                  child:
-                                                                     // Edit
-                                                                  Text('',
-                                                                    style: TextStyle(
-                                                                        color: AppColors
-                                                                            .mainblue,
-                                                                        fontWeight:
-                                                                        FontWeight
-                                                                            .bold),
-                                                                  ),
-                                                                ),
-                                                              ),
-                                                            ),
+
                                                             Text(
                                                               'details',
                                                               style: TextStyle(
@@ -687,6 +712,54 @@ class _QuotationScreenState extends State<NewQuotationScreen> {
                                                       ],
                                                     ),
                                                   ),
+                                                ///changes product[name] to item_no
+                                                GestureDetector(
+                                                  onTap: () =>
+                                                    showModalBottomSheet(
+                                                      // constraints:
+                                                      //     BoxConstraints.loose(Size(width, height * 0.75)),
+                                                      isScrollControlled: true,
+                                                      context: context,
+                                                      builder: (context) =>
+                                                          SingleChildScrollView(
+                                                            child: Padding(
+                                                              padding: EdgeInsets.only(
+                                                                bottom: MediaQuery.of(
+                                                                    context)
+                                                                    .viewInsets
+                                                                    .bottom,
+                                                              ),
+                                                              child: CartUpdateSheet(items:item,name:item['item_no'],page: 'quotation',cardcode:item['customer_code']),
+                                                            ),
+                                                          ),
+                                                    ),
+
+
+                                                   // _showDiscountBottomSheet(item, (item["item_no"]));
+
+                                                  child:
+                                                  const Padding(
+                                                    padding: EdgeInsets
+                                                        .only(
+                                                        right:
+                                                        5.0),
+                                                    child: Align(
+                                                      alignment:
+                                                      Alignment
+                                                          .centerRight,
+                                                      child:
+                                                      // Edit
+                                                      Text('Edit',
+                                                        style: TextStyle(
+                                                            color: AppColors
+                                                                .mainblue,
+                                                            fontWeight:
+                                                            FontWeight
+                                                                .bold),
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ),
                                                 const Divider(),
 
                                                 //               ],
@@ -716,7 +789,8 @@ class _QuotationScreenState extends State<NewQuotationScreen> {
                                       context,
                                       CupertinoPageRoute(
                                         builder: (context) =>
-                                            ProductQuatscreen(customerId: customerId,cardCode: selectedcardcode),
+                                            ProductQuatscreen(customerId: customerId,cardCode: selectedcardcode, page: 'quotation',
+                                            ),
 
                                       ),
                                     );
@@ -786,6 +860,7 @@ class _QuotationScreenState extends State<NewQuotationScreen> {
                                 await Get.to(() => ProductQuatscreen(
                                   customerId: customerId!,
                                   cardCode: selectedcardcode,
+                                  page: 'quotation',
                                 ));
                                 await cartController.fetchcartlist(
                                     context, customerId!);
@@ -892,6 +967,7 @@ class _QuotationScreenState extends State<NewQuotationScreen> {
                                       width: width *
                                           0.4, // Adjust the width as per your requirement (e.g., 40% of screen width)
                                       height: height * 0.05,
+
                                       padding: EdgeInsets.all(12),
                                       decoration: BoxDecoration(
                                         color: Colors.grey.withOpacity(0.2),
@@ -908,7 +984,48 @@ class _QuotationScreenState extends State<NewQuotationScreen> {
                                             fontSize: 15),
                                       )),
                                 ),
-                    Spacer(),
+
+                                // Text(
+                                //   selectedcardcode != null ? selectedcardcode! : "customer code",
+                                //   style: TextStyle(
+                                //     color: AppColors.blues,
+                                //     fontWeight: FontWeight.normal,
+                                //     fontSize: 15,
+                                //   ),
+                                //   maxLines: 1,
+                                //   overflow: TextOverflow.ellipsis, // Adds "..." if the text overflows
+                                // ),
+
+                                // Padding(
+                                //   padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 6),
+                                //   child: Container(
+                                //     width: width * 0.4, // 40% of screen width
+                                //     constraints: BoxConstraints(
+                                //       minHeight: height * 0.05, // Set minimum height to avoid text cutoff
+                                //     ),
+                                //     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8), // Adjusted padding
+                                //     decoration: BoxDecoration(
+                                //       color: Colors.grey.withOpacity(0.2),
+                                //       borderRadius: BorderRadius.circular(9),
+                                //       border: Border.all(color: Colors.grey),
+                                //     ),
+                                //     child: FittedBox(
+                                //       fit: BoxFit.scaleDown, // Ensures text fits inside the box
+                                //       alignment: Alignment.centerLeft,
+                                //       child: Text(
+                                //         selectedcardcode != null ? selectedcardcode! : "customer code",
+                                //         style: TextStyle(
+                                //           color: AppColors.blues,
+                                //           fontWeight: FontWeight.normal,
+                                //           fontSize: 15,
+                                //         ),
+                                //       ),
+                                //     ),
+                                //   ),
+                                // ),
+
+                                Spacer(),
+
                     GestureDetector(
                       onTap: () {
                         setState(() {
@@ -921,6 +1038,28 @@ class _QuotationScreenState extends State<NewQuotationScreen> {
                       ),
                                 SizedBox(width: 7)
                               ],
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 5, vertical: 6),
+                              child: Container(
+                                  width: width,
+                                  height: height * 0.05,
+                                  padding: EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey.withOpacity(0.2),
+                                    borderRadius: BorderRadius.circular(9),
+                                    border: Border.all(color: Colors.grey),
+                                  ),
+                                  child: Text(
+                                    saleEmployee != null
+                                        ? saleEmployee!
+                                        : "Sales Employee Name",
+                                    style: TextStyle(
+                                        color: AppColors.blues,
+                                        fontWeight: FontWeight.normal,
+                                        fontSize: 15),
+                                  )),
                             ),
                             Row(
                               children: [
@@ -973,10 +1112,11 @@ class _QuotationScreenState extends State<NewQuotationScreen> {
                                               DateTime? pickedDate =
                                                   await showDatePicker(
                                                 context: context,
-                                                initialDate: DateTime.now().add(
-                                                    Duration(
-                                                        days:
-                                                            8)), // Default 8 days forward
+                                                initialDate: DateTime.now(),
+                                                    // .add(
+                                                    // Duration(
+                                                    //     days:
+                                                    //         8)), // Default 8 days forward
                                                 firstDate: DateTime(2000),
                                                 lastDate: DateTime(2101),
                                               );
@@ -1005,162 +1145,439 @@ class _QuotationScreenState extends State<NewQuotationScreen> {
                                         CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        "Payment %",
+                                        "Credit Days",
                                         style: TextStyle(
                                           fontSize: 13,
                                           color: Colors.black,
                                           fontWeight: FontWeight.bold,
                                         ),
                                       ),
+
+
                                       Padding(
                                         padding: const EdgeInsets.symmetric(
-                                            horizontal: 5, vertical: 3),
+                                            horizontal: 5, vertical: 4),
                                         child: Container(
-                                          width: width *
-                                              0.45, // Adjust the width as per your requirement (e.g., 40% of screen width)
-                                          height: height * 0.05,
-                                          child: Obx(() {
-                                            if (dc.isLoading9.value) {
-                                              return const Center(
-                                                  child:
-                                                      CircularProgressIndicator());
-                                            } else if (dc.errorMessage9.value
-                                                .isNotEmpty) {
-                                              return Center(
-                                                  child: Text(
-                                                      dc.errorMessage9.value));
-                                            } else {
-                                              final PayItems = dc.payterm;
-                                              return DropdownSearch<dynamic>(
-                                                items: PayItems.value,
-                                                dropdownDecoratorProps:
-                                                    DropDownDecoratorProps(
-                                                  dropdownSearchDecoration:
-                                                      CommonWidget
-                                                          .dropdecoration(
-                                                    'Select Term',
-                                                    EdgeInsets.only(
-                                                        top: 13, left: 8),
-                                                  ),
-                                                ),
-                                                onChanged:
-                                                    (dynamic? selectedText) {
-                                                  if (selectedText != null) {
-                                                    setState(() {
-                                                      selectedterm.value =
-                                                          selectedText;
-                                                      print(selectedText);
-                                                    });
-                                                  }
-                                                },
-                                                dropdownBuilder:
-                                                    (context, selectedItem) {
-                                                  return Text(
-                                                    selectedItem ??
-                                                        'Select Term',
-                                                    style: TextStyle(
-                                                      fontWeight:
-                                                          FontWeight.w500,
-                                                      color:
-                                                          Colors.grey.shade600,
-                                                    ),
-                                                  );
-                                                },
-                                              );
-                                            }
-                                          }),
-                                        ),
+                                            width: width *
+                                                0.4, // Adjust the width as per your requirement (e.g., 40% of screen width)
+                                            height: height * 0.05,
+                                            padding: const EdgeInsets.all(7),
+                                            decoration: BoxDecoration(
+                                              color: Colors.grey.withOpacity(0.2),
+                                              borderRadius:
+                                              BorderRadius.circular(9),
+                                              border:
+                                              Border.all(color: Colors.grey),
+                                            ),
+                                            child: Text(
+                                              selectedterm
+                                                  ?? "payment code",
+                                              style: TextStyle(
+                                                  color: AppColors.blues,
+                                                  fontWeight: FontWeight.normal,
+                                                  fontSize: 15),
+                                            )),
                                       ),
+
+
+
+
+                                      // Padding(
+                                      //   padding: const EdgeInsets.symmetric(
+                                      //       horizontal: 5, vertical: 3),
+                                      //   child: Container(
+                                      //     width: width * 0.45, // Adjust the width as per your requirement (e.g., 40% of screen width)
+                                      //     height: height * 0.05,
+                                      //     child: Obx(() {
+                                      //       if (dc.isLoading9.value) {
+                                      //         return const Center(
+                                      //             child:
+                                      //                 CircularProgressIndicator());
+                                      //       } else if (dc.errorMessage9.value
+                                      //           .isNotEmpty) {
+                                      //         return Center(
+                                      //             child: Text(
+                                      //                 dc.errorMessage9.value));
+                                      //       } else {
+                                      //         final PayItems = dc.payterm;
+                                      //         return DropdownSearch<dynamic>(
+                                      //           items: PayItems.value,
+                                      //           dropdownDecoratorProps:
+                                      //               DropDownDecoratorProps(
+                                      //             dropdownSearchDecoration:
+                                      //                 CommonWidget
+                                      //                     .dropdecoration(
+                                      //               'Select Term',
+                                      //               EdgeInsets.only(
+                                      //                   top: 13, left: 8),
+                                      //             ),
+                                      //           ),
+                                      //           onChanged:
+                                      //               (dynamic? selectedText) {
+                                      //             if (selectedText != null) {
+                                      //               setState(() {
+                                      //                 selectedterm.value =
+                                      //                     selectedText;
+                                      //                 print(selectedText);
+                                      //               });
+                                      //             }
+                                      //           },
+                                      //           dropdownBuilder:
+                                      //               (context, selectedItem) {
+                                      //             return Text(
+                                      //               selectedItem ??
+                                      //                   'Select Term',
+                                      //               style: TextStyle(
+                                      //                 fontWeight:
+                                      //                     FontWeight.w500,
+                                      //                 color:
+                                      //                     Colors.grey.shade600,
+                                      //               ),
+                                      //             );
+                                      //           },
+                                      //         );
+                                      //       }
+                                      //     }),
+                                      //   ),
+                                      // ),
                                     ],
                                   ),
                                 ),
                               ],
                             ),
+
+                            Row(
+                             // mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 5.0, vertical: 3),
+                                  child: Container(
+                                    //  width: width,
+                                      width: width * 0.42,
+
+                                      height: height * 0.05,
+                                      padding: EdgeInsets.symmetric(
+                                          horizontal: 5, vertical: 0),
+                                      decoration: BoxDecoration(
+                                        border: Border.all(
+                                          color: Colors.grey.shade400,
+                                        ), // Border color and width
+                                        borderRadius:
+                                        BorderRadius.circular(
+                                            5), // Rounded border
+                                      ),
+                                      child: Obx(() => dc.warranty.isNotEmpty?
+                                      DropdownButton<String>(
+                                          value: warranty.value.isNotEmpty
+                                              ? warranty.value
+                                              : null,
+                                          hint: Text(
+                                              'Warrenty'),
+                                          icon: const Icon(
+                                            Icons
+                                                .keyboard_arrow_down_outlined,
+                                            size: 18,
+                                          ),
+isExpanded : true,
+                                          onChanged: (String? value) {
+                                            if (value != null) {
+                                              warranty.value =
+                                                  value; // Directly update using GetX
+                                            }
+                                          },
+                                        items: dc.warranty.map<DropdownMenuItem<String>>(
+                                                  (workitem) =>DropdownMenuItem<String>(
+                                                  value:( workitem['id']).toString(),
+                                                  child: Text(workitem['name'],
+                                                      overflow: TextOverflow.ellipsis,
+                                                      maxLines: 5,
+                                                      style: TextStyle(
+                                                        fontSize: 16,
+                                                        color:  Colors.black,
+                                                      )),
+                                                ),
+
+                                              ).toList(),
+                                        ):Text('Failed to fetch',style: TextStyle(color:Colors.red),)
+                                      ))
+                                ),
+
+                            Expanded(
+                              child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 5.0, vertical: 3),
+                                  child: Container(
+                                    //  width: width,
+                                      // width: width * 0.4, // Adjust the width as per your requirement (e.g., 40% of screen width)
+                                      height: height * 0.05,
+                                      width: width * 0.42,
+
+                                      padding: EdgeInsets.symmetric(
+                                          horizontal: 5, vertical: 0),
+                                      decoration: BoxDecoration(
+                                        border: Border.all(
+                                          color: Colors.grey.shade400,
+                                        ), // Border color and width
+                                        borderRadius:
+                                        BorderRadius.circular(
+                                            5), // Rounded border
+                                      ),
+                                      child: Obx(() => dc.delivery.isNotEmpty?
+                                      DropdownButton<String>(
+                                        value: delivery.value.isNotEmpty
+                                            ? delivery.value
+                                            : null,
+                                        hint: Text(
+                                            'Delivery'),
+                                        icon: const Icon(
+                                          Icons
+                                              .keyboard_arrow_down_outlined,
+                                          size: 18,
+                                        ),
+                                        isExpanded: true,
+
+                                        onChanged: (String? value) {
+                                          if (value != null) {
+                                            delivery.value =
+                                                value; // Directly update using GetX
+                                          }
+                                        },
+                                        items: dc.delivery.map<DropdownMenuItem<String>>(
+                                              (workitem) =>DropdownMenuItem<String>(
+                                            value:( workitem['id']).toString(),
+                                            child: Text(workitem['name'],
+                                                overflow: TextOverflow.ellipsis,
+                                                maxLines: 5,
+                                                style: TextStyle(
+
+                                                  fontSize: 16,
+                                                  color:  Colors.black,
+                                                )),
+                                          ),
+
+                                        ).toList(),
+                                      ):Text('Failed to fetch',style: TextStyle(color:Colors.red),)
+                                      ))
+                              ),
+                            ),
+                              ],
+                            ),
+                            Padding(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 5.0, vertical: 4),
+                                child: Container(
+                                    width: width,
+                                    // width: width * 0.45, // Adjust the width as per your requirement (e.g., 40% of screen width)
+                                    height: height * 0.05,
+
+                                    padding: EdgeInsets.symmetric(
+                                        horizontal: 5, vertical: 0),
+                                    decoration: BoxDecoration(
+                                      border: Border.all(
+                                        color: Colors.grey.shade400,
+                                      ), // Border color and width
+                                      borderRadius:
+                                      BorderRadius.circular(
+                                          5), // Rounded border
+                                    ),
+                                    child: Obx(() => dc.validity.isNotEmpty?
+                                    DropdownButton<String>(
+                                      value: validity.value.isNotEmpty
+                                          ? (validity.value)
+                                          : null,
+                                      hint: Text(
+                                          'Validity'),
+                                      icon: const Icon(
+                                        Icons
+                                            .keyboard_arrow_down_outlined,
+                                        size: 18,
+                                      ),
+                                      isExpanded: true,
+
+                                      onChanged: (String? value) {
+                                        if (value != null) {
+                                          validity.value =
+                                              value; // Directly update using GetX
+                                        }
+                                      },
+                                      items: dc.validity.map<DropdownMenuItem<String>>(
+                                            (workitem) =>DropdownMenuItem<String>(
+                                          value:( workitem['id']).toString(),
+                                          child: Text(workitem['name'],
+                                              overflow: TextOverflow.ellipsis,
+                                              maxLines: 5,
+                                              style: const TextStyle(
+                                                fontSize: 16,
+                                                color: Colors.black,
+                                              )),
+                                        ),
+
+                                      ).toList(),
+                                    ):Text('Failed to fetch',style: TextStyle(color:Colors.red),)
+                                    ))
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 5.0, vertical: 4),
+                              child: Container(
+                                  width: width,
+                                  // width: width * 0.45, // Adjust the width as per your requirement (e.g., 40% of screen width)
+                                  height: height * 0.05,
+                                  padding: EdgeInsets.symmetric(
+                                      horizontal: 5, vertical: 0),
+                                  decoration: BoxDecoration(
+                                    border: Border.all(
+                                      color: Colors.grey.shade400,
+                                    ), // Border color and width
+                                    borderRadius:
+                                    BorderRadius.circular(
+                                        5), // Rounded border
+                                  ),
+                                  child: Obx(
+                                        () => DropdownButton<String>(
+                                      value: tax_drop
+                                          .contains(
+                                          tax.value)
+                                          ? tax.value
+                                          : null,
+                                      hint: Text(
+                                          'Tax'),
+                                      icon: const Icon(
+                                        Icons
+                                            .keyboard_arrow_down_outlined,
+                                        size: 18,
+                                      ),
+                                      onChanged: (String? value) {
+                                        if (value != null) {
+                                          tax.value =
+                                              value; // Directly update using GetX
+                                        }
+                                      },
+                                      items: tax_drop.map<
+                                          DropdownMenuItem<
+                                              String>>(
+                                              (String value) {
+                                            return DropdownMenuItem<
+                                                String>(
+                                              value: value,
+                                              child: Text(value,
+                                                  style: TextStyle(
+                                                    fontSize: 16,
+                                                    color:  Colors.black,
+                                                  )),
+                                            );
+                                          }).toList(),
+                                    ),
+                                  )),
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 5, vertical: 3),
+                              child: TextField(
+                                controller: freight,
+                                decoration: InputDecoration(
+                                  contentPadding:
+                                  const EdgeInsets.all(10),
+                                  hintText: "Freight charges",
+                                  alignLabelWithHint: true,
+                                  hintStyle: TextStyle(
+                                    fontWeight: FontWeight.w500,
+                                    color: Colors.grey.shade400,
+                                    fontSize: 15,
+                                  ),
+                                  border: OutlineInputBorder(
+                                    borderSide: BorderSide(
+                                        color: Colors.grey.shade200),
+                                  ),
+                                ),
+                              ),
+                            ),
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(
-                                  "Contact ",
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    color: Colors.black,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 5, vertical: 3),
-                                  child: Container(
-                                    height: height * 0.05,
-                                    child: Obx(() {
-                                      if (dc.isLoading5.value) {
-                                        return Center(
-                                            child: CircularProgressIndicator());
-                                      } else if (dc
-                                          .errorMessage5.value.isNotEmpty) {
-                                        return Center(
-                                            child:
-                                                Text(dc.errorMessage5.value));
-                                      } else {
-                                        final contactlist = dc.contact.value;
-                                        final contactdata =
-                                            contactlist is List<dynamic>
-                                                ? contactlist
-                                                : [];
-
-                                        final Map<String, String> dropdownMap =
-                                            {
-                                          for (var item in contactdata)
-                                            '${item["name"]}-${item["cellolar"]}':
-                                                (item["id"]).toString()
-                                        };
-
-                                        final dropdownItems = dropdownMap.keys.toList();
-
-                                        return Container(
-                                          width: width,
-                                          decoration: BoxDecoration(
-                                              borderRadius:
-                                                  BorderRadius.circular(9)),
-                                          child: DropdownSearch<String>(
-                                            items: dropdownItems,
-                                            dropdownDecoratorProps:
-                                                DropDownDecoratorProps(
-                                              dropdownSearchDecoration:
-                                                  CommonWidget.dropdecoration(
-                                                'Select contact',
-                                                EdgeInsets.only(
-                                                    top: 13, left: 8),
-                                              ),
-                                            ),
-                                            onChanged: (String? conText) async {
-                                              if (conText != null) {
-                                                final conId = dropdownMap[
-                                                    conText]; // Get the ID for the selected text
-                                                if (conId != null) {
-                                                  setState(() {
-                                                    contact.value = conId;
-                                                    print(conId);
-                                                  });
-                                                }
-                                              }
-                                            },
-                                            dropdownBuilder:
-                                                (context, selectedItem) {
-                                              return Text(
-                                                selectedItem ??
-                                                    'Select contact',
-                                                style: TextStyle(
-                                                    fontWeight:
-                                                        FontWeight.w600),
-                                              );
-                                            },
-                                          ),
-                                        );
-                                      }
-                                    }),
-                                  ),
-                                ),
+                                // Text(
+                                //   "Contact ",
+                                //   style: TextStyle(
+                                //     fontSize: 13,
+                                //     color: Colors.black,
+                                //     fontWeight: FontWeight.bold,
+                                //   ),
+                                // ),
+                                // Padding(
+                                //   padding: const EdgeInsets.symmetric(
+                                //       horizontal: 5, vertical: 3),
+                                //   child: Container(
+                                //     height: height * 0.05,
+                                //     child: Obx(() {
+                                //       if (dc.isLoading5.value) {
+                                //         return Center(
+                                //             child: CircularProgressIndicator());
+                                //       } else if (dc
+                                //           .errorMessage5.value.isNotEmpty) {
+                                //         return Center(
+                                //             child:
+                                //                 Text(dc.errorMessage5.value));
+                                //       } else {
+                                //         final contactlist = dc.contact.value;
+                                //         final contactdata =
+                                //             contactlist is List<dynamic>
+                                //                 ? contactlist
+                                //                 : [];
+                                //
+                                //         final Map<String, String> dropdownMap =
+                                //             {
+                                //           for (var item in contactdata)
+                                //             '${item["name"]}-${item["cellolar"]}':
+                                //                 (item["id"]).toString()
+                                //         };
+                                //
+                                //         final dropdownItems = dropdownMap.keys.toList();
+                                //
+                                //         return Container(
+                                //           width: width,
+                                //           decoration: BoxDecoration(
+                                //               borderRadius:
+                                //                   BorderRadius.circular(9)),
+                                //           child: DropdownSearch<String>(
+                                //             items: dropdownItems,
+                                //             dropdownDecoratorProps:
+                                //                 DropDownDecoratorProps(
+                                //               dropdownSearchDecoration:
+                                //                   CommonWidget.dropdecoration(
+                                //                 'Select contact',
+                                //                 EdgeInsets.only(
+                                //                     top: 13, left: 8),
+                                //               ),
+                                //             ),
+                                //             onChanged: (String? conText) async {
+                                //               if (conText != null) {
+                                //                 final conId = dropdownMap[
+                                //                     conText]; // Get the ID for the selected text
+                                //                 if (conId != null) {
+                                //                   setState(() {
+                                //                     contact.value = conId;
+                                //                     print(conId);
+                                //                   });
+                                //                 }
+                                //               }
+                                //             },
+                                //             dropdownBuilder:
+                                //                 (context, selectedItem) {
+                                //               return Text(
+                                //                 selectedItem ??
+                                //                     'Select contact',
+                                //                 style: TextStyle(
+                                //                     fontWeight:
+                                //                         FontWeight.w600),
+                                //               );
+                                //             },
+                                //           ),
+                                //         );
+                                //       }
+                                //     }),
+                                //   ),
+                                // ),
                                 Padding(
                                   padding: const EdgeInsets.symmetric(
                                       horizontal: 5, vertical: 6),
@@ -1180,6 +1597,8 @@ class _QuotationScreenState extends State<NewQuotationScreen> {
                                         style: TextStyle(
                                             color: AppColors.blues,
                                             fontWeight: FontWeight.normal,
+                                            overflow: TextOverflow.ellipsis, // Adds "..." if the text overflows
+
                                             fontSize: 15),
                                       )),
                                 ),
@@ -1486,58 +1905,226 @@ class _QuotationScreenState extends State<NewQuotationScreen> {
                                 size: 18,
                                 color: Colors.black54,
                               ))],),
-                            Padding(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 5, vertical: 3),
-                              child: TextField(
-                                controller: remarks,
-                                onChanged: (val) {
-                                  setState(() {
-                                    _charCount = val.length;
-                                  });
-                                },
-                                maxLength: 100,
-                                decoration: InputDecoration(
-                                  contentPadding: const EdgeInsets.all(10),
-                                  hintText: "Remarks",
-                                  alignLabelWithHint: true,
-                                  hintStyle: TextStyle(
-                                    fontWeight: FontWeight.w500,
-                                    color: Colors.grey.shade400,
-                                    fontSize: 15,
-                                  ),
-                                  border: OutlineInputBorder(
-                                    borderSide: BorderSide(color: Colors.grey.shade200),
+
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 5, vertical: 3),
+                                child: TextField(
+                                  controller: opp_name,
+                                  decoration: InputDecoration(
+                                    contentPadding:
+                                    const EdgeInsets.all(10),
+                                    hintText: "Opportunity Name:",
+                                    alignLabelWithHint: true,
+                                    hintStyle: TextStyle(
+                                      fontWeight: FontWeight.w500,
+                                      color: Colors.grey.shade400,
+                                      fontSize: 15,
+                                    ),
+                                    border: OutlineInputBorder(
+                                      borderSide: BorderSide(
+                                          color: Colors.grey.shade200),
+                                    ),
                                   ),
                                 ),
                               ),
-                            ),
-                                                    SizedBox(height: 10),
-                                                    Padding(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 5, vertical: 3),
-                            child: TextField(
-                              controller: deliveryterms,
-                              onChanged: (val) {
-                                setState(() {
-                                  _charCount = val.length;
-                                });
-                              },
-                              maxLength: 50,
-                              decoration: InputDecoration(
-                                contentPadding: const EdgeInsets.all(10),
-                                hintText: "Deleivery Terms",
-                                alignLabelWithHint: true,
-                                hintStyle: TextStyle(
-                                  fontWeight: FontWeight.w500,
-                                  color: Colors.grey.shade400,
-                                  fontSize: 15,
-                                ),
-                                border: OutlineInputBorder(
-                                  borderSide: BorderSide(color: Colors.grey.shade200),
+                              SizedBox(height: 10),
+
+                              Obx(() =>
+                                Column(
+                                  children: [
+                                    Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 5.0, vertical: 4),
+                                      child: Container(
+                                          width: width,
+                                          // width: width * 0.45,
+                                          height: height * 0.05,
+                                          padding: EdgeInsets.symmetric(
+                                              horizontal: 5, vertical: 0),
+                                          decoration: BoxDecoration(
+                                            border: Border.all(
+                                              color: Colors.grey.shade400,
+                                            ), // Border color and width
+                                            borderRadius: BorderRadius.circular(
+                                                5), // Rounded border
+                                          ),
+                                          child: Obx(
+                                                () => DropdownButton<String>(
+                                              value: opp_type_drop
+                                                  .contains(opp_type.value)
+                                                  ? opp_type.value
+                                                  : null,
+                                              hint: Text('Opportunity Type'),
+                                              icon: const Icon(
+                                                Icons
+                                                    .keyboard_arrow_down_outlined,
+                                                size: 18,
+                                              ),
+                                              onChanged: (String? value) {
+                                                if (value != null) {
+                                                  opp_type.value =
+                                                      value; // Directly update using GetX
+                                                }
+                                              },
+                                              items: opp_type_drop.map<
+                                                  DropdownMenuItem<String>>(
+                                                      (String value) {
+                                                    return DropdownMenuItem<String>(
+                                                      value: value,
+                                                      child: Text(value,
+                                                          style: TextStyle(
+                                                            fontSize: 16,
+                                                            //  color: (opp_type.value.isEmpty)?Colors.grey.shade400:Colors.black,
+                                                          )),
+                                                    );
+                                                  }).toList(),
+                                            ),
+                                          )),
+                                    ),
+                                    SizedBox(height: 10),
+                                    if (opp_type.value == 'Renewal')
+                                      Padding(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 5.0, vertical: 4),
+                                        child: Container(
+                                            width: width,
+                                            // width: width * 0.45, // Adjust the width as per your requirement (e.g., 40% of screen width)
+                                            height: height * 0.05,
+                                            padding: EdgeInsets.symmetric(
+                                                horizontal: 5, vertical: 0),
+                                            decoration: BoxDecoration(
+                                              border: Border.all(
+                                                color: Colors.grey.shade400,
+                                              ), // Border color and width
+                                              borderRadius:
+                                              BorderRadius.circular(
+                                                  5), // Rounded border
+                                            ),
+                                            child: Obx(
+                                                  () => DropdownButton<String>(
+                                                value: oppRenewal_type_drop
+                                                    .contains(
+                                                    opp_renewType.value)
+                                                    ? opp_renewType.value
+                                                    : null,
+                                                hint: Text(
+                                                    'Opportunity Renewal Type'),
+                                                icon: const Icon(
+                                                  Icons
+                                                      .keyboard_arrow_down_outlined,
+                                                  size: 18,
+                                                ),
+                                                onChanged: (String? value) {
+                                                  if (value != null) {
+                                                    opp_renewType.value =
+                                                        value; // Directly update using GetX
+                                                  }
+                                                },
+                                                items: oppRenewal_type_drop.map<
+                                                    DropdownMenuItem<
+                                                        String>>(
+                                                        (String value) {
+                                                      return DropdownMenuItem<
+                                                          String>(
+                                                        value: value,
+                                                        child: Text(value,
+                                                            style: TextStyle(
+                                                              fontSize: 16,
+                                                              color: (opp_renewType
+                                                                  .isEmpty)
+                                                                  ? Colors
+                                                                  .grey.shade400
+                                                                  : Colors.black,
+                                                            )),
+                                                      );
+                                                    }).toList(),
+                                              ),
+                                            )),
+                                      ),
+
+                                  ],
                                 ),
                               ),
-                            ),),
+                              // ),
+
+                              SizedBox(height: 10),
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 5, vertical: 3),
+                                child: TextField(
+                                  controller: opp_subtype,
+                                  decoration: InputDecoration(
+                                    contentPadding:
+                                    const EdgeInsets.all(10),
+                                    hintText: "Opportunity SubType:",
+                                    alignLabelWithHint: true,
+                                    hintStyle: TextStyle(
+                                      fontWeight: FontWeight.w500,
+                                      color: Colors.grey.shade400,
+                                      fontSize: 15,
+                                    ),
+                                    border: OutlineInputBorder(
+                                      borderSide: BorderSide(
+                                          color: Colors.grey.shade200),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              SizedBox(height: 10),
+
+                            // Padding(
+                            //   padding: const EdgeInsets.symmetric(
+                            //       horizontal: 5, vertical: 3),
+                            //   child: TextField(
+                            //     controller: remarks,
+                            //     onChanged: (val) {
+                            //       setState(() {
+                            //         _charCount = val.length;
+                            //       });
+                            //     },
+                            //     maxLength: 100,
+                            //     decoration: InputDecoration(
+                            //       contentPadding: const EdgeInsets.all(10),
+                            //       hintText: "Remarks",
+                            //       alignLabelWithHint: true,
+                            //       hintStyle: TextStyle(
+                            //         fontWeight: FontWeight.w500,
+                            //         color: Colors.grey.shade400,
+                            //         fontSize: 15,
+                            //       ),
+                            //       border: OutlineInputBorder(
+                            //         borderSide: BorderSide(color: Colors.grey.shade200),
+                            //       ),
+                            //     ),
+                            //   ),
+                            // ),
+                            //                         SizedBox(height: 10),
+                            //                         Padding(
+                            // padding: const EdgeInsets.symmetric(
+                            //     horizontal: 5, vertical: 3),
+                            // child: TextField(
+                            //   controller: deliveryterms,
+                            //   onChanged: (val) {
+                            //     setState(() {
+                            //       _charCount = val.length;
+                            //     });
+                            //   },
+                            //   maxLength: 50,
+                            //   decoration: InputDecoration(
+                            //     contentPadding: const EdgeInsets.all(10),
+                            //     hintText: "Deleivery Terms",
+                            //     alignLabelWithHint: true,
+                            //     hintStyle: TextStyle(
+                            //       fontWeight: FontWeight.w500,
+                            //       color: Colors.grey.shade400,
+                            //       fontSize: 15,
+                            //     ),
+                            //     border: OutlineInputBorder(
+                            //       borderSide: BorderSide(color: Colors.grey.shade200),
+                            //     ),
+                            //   ),
+                            // ),),
                                                    // SizedBox(height: 10),
                             Row(
                               children: [
@@ -1588,6 +2175,52 @@ class _QuotationScreenState extends State<NewQuotationScreen> {
                                 ),
                               ),
                             ),
+
+                              Align(
+                                alignment: Alignment.bottomLeft,
+                                child: ElevatedButton(
+                                  style: CommonWidget.commonbuttonStyle,
+                                  onPressed: () async {
+                                    final result = await FilePicker
+                                        .platform
+                                        .pickFiles(
+                                      allowMultiple: true,
+                                      type: FileType.custom,
+                                      allowedExtensions: [
+                                        'jpg',
+                                        'jpeg',
+                                        'png',
+                                        'doc',
+                                        'docx',
+                                        'pdf'
+                                      ],
+                                    );
+
+                                    if (result != null &&
+                                        result.files.isNotEmpty) {
+                                      final file = result.files.first;
+                                      setState(() {
+                                        selectedFile = File(file.path!);
+                                        pickedFileName = file.name;
+                                        filePicked = true;
+                                      });
+                                      //  pc.attachment = selectedFile;
+                                    }
+                                  },
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(Icons.file_download),
+                                      SizedBox(width: 8),
+                                      filePicked
+                                          ? Text(pickedFileName)
+                                          : Text('Choose File'),
+                                    ],
+                                  ),
+                                ),
+                              ),
+
+
                                                     ],),
                           )
                      :GestureDetector(
@@ -1644,10 +2277,11 @@ class _QuotationScreenState extends State<NewQuotationScreen> {
           ),
           Obx(() => cartController.isLoading3.value
               ? Positioned.fill(
-                  child: Container(
-                    color: Colors.white, // Semi-transparent background
-                    child: Center(child: CircularProgressIndicator()),
-                  ),
+                  child:shimmerLoadingOverlay()
+                  // Container(
+                  //   color: Colors.white, // Semi-transparent background
+                  //   child: Center(child: CircularProgressIndicator()),
+                  // ),
                 )
               : SizedBox.shrink()),
         ],
@@ -1691,12 +2325,12 @@ class _QuotationScreenState extends State<NewQuotationScreen> {
                       )),
                   ],
                 ),
-            ButtonBS(
-                title: 'Place Quatation',
+         ButtonBS(
+                title: 'Place Quotation',
                 textColor: Colors.white,
                 fontSize: 15,
                 fontWeight: FontWeight.w600,
-                width: width * 0.39,
+                // width: width * 0.4,
                 height: height * 0.04,
                 padding: 5.0,
                 backgroundColor: AppColors.blues,
@@ -1732,460 +2366,70 @@ class _QuotationScreenState extends State<NewQuotationScreen> {
                     return;
                   }
                   final body = {
+                    'type':0,
                     "customerId": customerId,
                     "address_id": bill_id.value,
                     "address_shipto": ship_id.value,
-                    "contact_id": contact.value,
-                    "payment_term": selectedterm.value,
+                    "sales_emp_name" : selectedsalesemployee,
+                    "payment_term": selectedterm,
                     "valid_till": _dateController.text,
-                    "remarks": remarks.text,
-                    "branch": branch,
-                    "delivery_term": deliveryterms.text,
-                    "other_term_condition": otherterms.text
+                    'validity':validity.value,
+                    'opportunity_name': opp_name.text,
+                    'opportunity_type': opp_type.value,
+                    'opportunity_renewal': opp_renewType.value,
+                    'opportunity_subtype': opp_subtype.text,
+                    'freight': freight.text,
+                    "branch": branch ?? '',
+                    "tax": tax.value,
+                    "delivery_term": delivery.value,
+                    "other_term_condition": otherterms.text,
+                    "warranty" : warranty.value,
                   };
 
                   print(body);
+                  LoadingOverlay.show("Please wait while posting");
 
-                  var response = await cartController.PostOrder(context, body, customerId!);
+                  var response = await qc.PostQuatation(body,'quotation',selectedFile);
                   var decodedValue = response;
-                 print(decodedValue);
+                  LoadingOverlay.hide();
+                  print(decodedValue);
                   if (decodedValue['success'] == true) {
-                    Fluttertoast.showToast(
-                      msg: "Your Quatation was placed successfully",
-                      toastLength: Toast.LENGTH_SHORT,
-                      gravity: ToastGravity.CENTER,
-                      backgroundColor: Colors.green.shade100,
-                      textColor: Colors.black,
-                      fontSize: 16.0,
-                    );
                     Get.back();
+                    CommonWidget.showSnackbar(status: true, message: "Your Quotation was placed successfully");
+
+                    // Fluttertoast.showToast(
+                    //   msg: "Your Quotation was placed successfully",
+                    //   toastLength: Toast.LENGTH_SHORT,
+                    //   gravity: ToastGravity.CENTER,
+                    //   backgroundColor: Colors.green.shade100,
+                    //   textColor: Colors.black,
+                    //   fontSize: 16.0,
+                    // );
+                    await qc.Quatationlist();
+
+                   ///
                   } else {
-                    Fluttertoast.showToast(
-                      msg: response['message'] ??
-                          "Something went wrong. Please try again.",
-                      toastLength: Toast.LENGTH_SHORT,
-                      gravity: ToastGravity.CENTER,
-                      backgroundColor: Colors.red.shade100,
-                      textColor: Colors.black,
-                      fontSize: 16.0,
-                    );
+
+                    CommonWidget.showSnackbar(status:false,message: response['message'] ??
+                        "Something went wrong. Please try again.");
+
+                    // Fluttertoast.showToast(
+                    //   msg: response['message'] ??
+                    //       "Something went wrong. Please try again.",
+                    //   toastLength: Toast.LENGTH_SHORT,
+                    //   gravity: ToastGravity.CENTER,
+                    //   backgroundColor: Colors.red.shade100,
+                    //   textColor: Colors.black,
+                    //   fontSize: 16.0,
+                    // );
                   }
                 })
+         // ),
           ]),
         ),
       ),
     );
   }
 
-  void _showDiscountBottomSheet(Map<String, dynamic> item, String name) {
-    final h = MediaQuery.of(context).size.height;
-    final w = MediaQuery.of(context).size.width;
 
-    TextEditingController areaprice =
-        TextEditingController(text: item['price'].toString());
-    TextEditingController advCash =
-        TextEditingController(text: item['discount1'].toString());
-    TextEditingController scheme =
-        TextEditingController(text: item['discount2'].toString());
-    TextEditingController GMB =
-        TextEditingController(text: item['discount3'].toString());
-    TextEditingController Spl =
-        TextEditingController(text: item['discount4'].toString());
-    TextEditingController Distri =
-        TextEditingController(text: item['discount5'].toString());
-    TextEditingController quantity =
-        TextEditingController(text: item['quantities'].toString());
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      // Allows the modal to take more space and scroll if needed
-      builder: (BuildContext context) {
-        return StatefulBuilder(
-          builder: (BuildContext context, StateSetter setState) {
-            // Initial value for calculated discount per bag
-            double discountPerBag =
-                _calculateDiscountPerBag(advCash, scheme, GMB, Spl, Distri);
-
-            // Recalculate the discount on text field changes
-            void _recalculateDiscount() {
-              setState(() {
-                discountPerBag =
-                    _calculateDiscountPerBag(advCash, scheme, GMB, Spl, Distri);
-              });
-            }
-
-            // Attach listeners to recalculate discount whenever text changes
-            advCash.addListener(_recalculateDiscount);
-            scheme.addListener(_recalculateDiscount);
-            GMB.addListener(_recalculateDiscount);
-            Spl.addListener(_recalculateDiscount);
-            Distri.addListener(_recalculateDiscount);
-            quantity.addListener(_recalculateDiscount);
-
-            return Stack(
-              children: [
-                SingleChildScrollView(
-                  child: Padding(
-                    padding: EdgeInsets.only(
-                      bottom: MediaQuery.of(context).viewInsets.bottom,
-                      top: 16.0,
-                      left: 16.0,
-                      right: 16.0,
-                    ),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      // Ensures the column takes only necessary space
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.only(
-                              top: 0.0, left: 10.0, right: 10.0, bottom: 0.0),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              // Text with trailing ellipsis
-                              Expanded(
-                                // Wrap with Expanded to make it flexible
-                                child: Text(
-                                  name,
-                                  style: TextStyle(
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                  overflow: TextOverflow
-                                      .ellipsis, // Add this line for ellipsis
-                                  maxLines:
-                                      1, // Set maxLines to 1 for a single line
-                                ),
-                              ),
-                              IconButton(
-                                onPressed: () {
-                                  Navigator.of(context).pop();
-                                },
-                                icon: const Icon(Icons.clear),
-                              )
-                            ],
-                          ),
-                        ),
-
-                        const Divider(
-                          thickness: 1,
-                          color: Colors.grey,
-                        ),
-                        // Row(children: [
-                        //
-                        //   _buildDiscountTextField(
-                        //       'Area Price Per Unit', areaprice),f
-                        //   const SizedBox(width: 5),
-                        //   _buildDiscountTextField(
-                        //       'Advance Cash Discount', advCash),
-                        // ],),
-                        const SizedBox(
-                          height: 10.0,
-                        ),
-                        SizedBox(
-                          width: double.infinity,
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Expanded(
-                                child: TextFormField(
-                                  controller: areaprice,
-                                  //onChanged: pc.onUnitPriceChanged,
-                                  decoration: const InputDecoration(
-                                    labelText: 'Unit Price',
-                                    border: OutlineInputBorder(),
-                                    contentPadding: EdgeInsets.symmetric(
-                                      vertical: 10.0,
-                                      horizontal: 10.0,
-                                    ),
-                                    floatingLabelBehavior:
-                                        FloatingLabelBehavior.always,
-                                  ),
-                                  keyboardType: TextInputType.number,
-                                ),
-                              ),
-                              const SizedBox(
-                                width: 10.0,
-                              ),
-                              Expanded(
-                                child: TextFormField(
-                                  controller: quantity,
-                                  //onChanged: pc.onPWTChanged,
-                                  decoration: const InputDecoration(
-                                    labelText: 'Quantity',
-                                    border: OutlineInputBorder(),
-                                    contentPadding: EdgeInsets.symmetric(
-                                      vertical: 10.0,
-                                      // Adjust the vertical padding
-                                      horizontal:
-                                          10.0, // Adjust the horizontal padding
-                                    ),
-                                    floatingLabelBehavior:
-                                        FloatingLabelBehavior.always,
-                                  ),
-                                  keyboardType: TextInputType.number,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(
-                          height: 10.0,
-                        ),
-                        SizedBox(
-                          width: double.infinity,
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Expanded(
-                                child: TextFormField(
-                                  controller: advCash,
-                                  //onChanged: pc.onUnitPriceChanged,
-                                  decoration: const InputDecoration(
-                                    labelText: 'advCash',
-                                    border: OutlineInputBorder(),
-                                    contentPadding: EdgeInsets.symmetric(
-                                      vertical: 10.0,
-                                      horizontal: 10.0,
-                                    ),
-                                    floatingLabelBehavior:
-                                        FloatingLabelBehavior.always,
-                                  ),
-                                  keyboardType: TextInputType.number,
-                                ),
-                              ),
-                              const SizedBox(
-                                width: 10.0,
-                              ),
-                              Expanded(
-                                child: TextFormField(
-                                  controller: scheme,
-                                  //onChanged: pc.onPWTChanged,
-                                  decoration: const InputDecoration(
-                                    labelText: 'scheme',
-                                    border: OutlineInputBorder(),
-                                    contentPadding: EdgeInsets.symmetric(
-                                      vertical: 10.0,
-                                      // Adjust the vertical padding
-                                      horizontal:
-                                          10.0, // Adjust the horizontal padding
-                                    ),
-                                    floatingLabelBehavior:
-                                        FloatingLabelBehavior.always,
-                                  ),
-                                  keyboardType: TextInputType.number,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        // _buildDiscountTextField('Scheme Discount', scheme),
-                        // const SizedBox(height: 5),
-                        const SizedBox(
-                          height: 10.0,
-                        ),
-                        SizedBox(
-                          width: double.infinity,
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Expanded(
-                                child: TextFormField(
-                                  controller: GMB,
-                                  //onChanged: pc.onUnitPriceChanged,
-                                  decoration: const InputDecoration(
-                                    labelText: 'GMB',
-                                    border: OutlineInputBorder(),
-                                    contentPadding: EdgeInsets.symmetric(
-                                      vertical: 10.0,
-                                      horizontal: 10.0,
-                                    ),
-                                    floatingLabelBehavior:
-                                        FloatingLabelBehavior.always,
-                                  ),
-                                  keyboardType: TextInputType.number,
-                                ),
-                              ),
-                              const SizedBox(
-                                width: 10.0,
-                              ),
-                              Expanded(
-                                child: TextFormField(
-                                  controller: Spl,
-                                  //onChanged: pc.onPWTChanged,
-                                  decoration: const InputDecoration(
-                                    labelText: 'Spl',
-                                    border: OutlineInputBorder(),
-                                    contentPadding: EdgeInsets.symmetric(
-                                      vertical: 10.0,
-                                      // Adjust the vertical padding
-                                      horizontal:
-                                          10.0, // Adjust the horizontal padding
-                                    ),
-                                    floatingLabelBehavior:
-                                        FloatingLabelBehavior.always,
-                                  ),
-                                  keyboardType: TextInputType.number,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        // _buildDiscountTextField('GMB Discount', GMB),
-                        // const SizedBox(height: 5),
-                        // _buildDiscountTextField('Special Discount', Spl),
-                        const SizedBox(
-                          height: 10.0,
-                        ),
-                        _buildDiscountTextField('Distributor Discount', Distri),
-                        const SizedBox(height: 20),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            const Text('Discount Per Bag:'),
-                            Text(discountPerBag
-                                .toString()), // Updated dynamically
-                          ],
-                        ),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            const Text('Total Discount:'),
-
-                            Text((discountPerBag *
-                                    (int.tryParse(quantity.text) ?? 0))
-                                .toString()), // Safely parsed
-
-                            // Recalculated dynamically
-                          ],
-                        ),
-                        const SizedBox(height: 10),
-                        ButtonBS(
-                          title: 'Update',
-                          textColor: AppColors.white,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          width: w * 0.3,
-                          height: 40,
-                          padding: 12,
-                          backgroundColor: AppColors.mainblue,
-                          borderRadius: 20,
-                          //suffixIcon: Icons.add,
-                          suffixIconColor: AppColors.mainblue,
-                          //suffixIconSize: 13,
-                          prefixIconSize: 0,
-                          // separateSuffixIcon: 5,
-                          onPressed: () async {
-                            final body = {
-                              "quantities": quantity.text,
-                              "status": 1,
-                              "price": areaprice.text,
-                              "discount1": advCash.text,
-                              "discount2": scheme.text,
-                              "discount3": GMB.text,
-                              "discount4": Spl.text,
-                              "discount5": Distri.text,
-                            };
-                            print(body);
-                            await cartController.CartUpdate(
-                                context, body, item['id']);
-                            if (cartController.cardupdate.value != null) {
-                              var decodedValue =
-                                  cartController.cardupdate.value;
-                              print("fwevraesvvfffffff$decodedValue");
-                              if (decodedValue['success'] == true) {
-                                Navigator.pop(context);
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(decodedValue['message'] ??
-                                        'Updated!'), // Use the message from response
-                                    backgroundColor: Colors
-                                        .green, // Set the background color to indicate success
-                                    duration: Duration(
-                                        seconds:
-                                            3), // Duration for SnackBar visibility
-                                  ),
-                                );
-                                await cartController.fetchcartlist(
-                                    context, customerId!);
-                              } else {
-                                // Handle case where the success field is false
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(decodedValue['message'] ??
-                                        'Failed to update cart.'),
-                                    backgroundColor: Colors
-                                        .red, // Set the background color to indicate failure
-                                    duration: Duration(seconds: 3),
-                                  ),
-                                );
-                              }
-                            } else {
-                              // Handle null or invalid response
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(
-                                      'Unexpected response from server. Please try again.'),
-                                  backgroundColor: Colors
-                                      .red, // Set the background color to indicate failure
-                                  duration: Duration(seconds: 3),
-                                ),
-                              );
-                            }
-                          },
-                          //separateSuffixIcon: 5,
-                        ),
-                        const SizedBox(height: 10),
-                      ],
-                    ),
-                  ),
-                ),
-                Obx(() => cartController.isLoading2.value
-                    ? Positioned.fill(
-                        child: Container(
-                          color: Colors.white, // Semi-transparent background
-                          child: Center(child: CircularProgressIndicator()),
-                        ),
-                      )
-                    : SizedBox.shrink()),
-              ],
-            );
-          },
-        );
-      },
-    );
-  }
-
-// Helper method to calculate discount per bag
-  double _calculateDiscountPerBag(
-    TextEditingController advCash,
-    TextEditingController scheme,
-    TextEditingController GMB,
-    TextEditingController Spl,
-    TextEditingController Distri,
-  ) {
-    double adv = double.tryParse(advCash.text) ?? 0;
-    double sch = double.tryParse(scheme.text) ?? 0;
-    double gmb = double.tryParse(GMB.text) ?? 0;
-    double spl = double.tryParse(Spl.text) ?? 0;
-    double dist = double.tryParse(Distri.text) ?? 0;
-
-    return adv + sch + gmb + spl + dist;
-  }
-
-// Helper method to build text fields for discounts
-  Widget _buildDiscountTextField(
-      String label, TextEditingController controller) {
-    return TextField(
-      controller: controller,
-      decoration: InputDecoration(
-        labelText: label,
-        border: const OutlineInputBorder(),
-      ),
-      keyboardType: TextInputType.number,
-    );
-  }
 }

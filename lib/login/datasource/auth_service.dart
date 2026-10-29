@@ -17,7 +17,7 @@ class AuthService {
       };
 
       final response = await http.post(
-        Uri.parse(URLConst.loginURL),
+        Uri.parse(URLConst.baseURL+URLConst.loginURL),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode(requestBody),
       );

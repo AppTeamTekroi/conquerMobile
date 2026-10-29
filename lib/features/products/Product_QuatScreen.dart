@@ -9,6 +9,7 @@ import 'package:vconquer/features/products/product_controller.dart';
 
 import '../../core/enum/post_enum_response.dart';
 import '../../ui/Buttons/buttonBS.dart';
+import '../../ui/assets/loading.dart';
 import '../../ui/color/appColor.dart';
 import '../../ui/richtext.dart';
 import '../cart/cart_controller.dart';
@@ -16,15 +17,18 @@ import '../cart/cart_controller.dart';
 class ProductQuatscreen extends StatefulWidget {
   final String? customerId;
   final String? cardCode;
-  const ProductQuatscreen({Key? key, this.customerId = "",this.cardCode = ""}) : super(key: key);
+  final String? page;
+  const ProductQuatscreen({Key? key, this.customerId = "",this.cardCode = "",this.page = ""}) : super(key: key);
 
   @override
   State<ProductQuatscreen> createState() => _ProductsState();
 }
 
 class _ProductsState extends State<ProductQuatscreen> {
-  final ProductController productController = Get.put(ProductController());
-  CartController cartController = Get.put(CartController());
+  final ProductController productController = Get.find();
+  final ScrollController _scrollController = ScrollController();
+
+  CartController cartController = Get.find();
   final List<RxInt> quantities = [];
   final List<TextEditingController> qtyControllers = [];
   String filter = "";
@@ -35,12 +39,46 @@ class _ProductsState extends State<ProductQuatscreen> {
   void initState() {
     super.initState();
     _fetchProducts();
+    _scrollController.addListener(_scrollListener);
+
+  }
+
+  void _scrollListener() {
+    if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 100 &&
+        !productController.isLoadingMore.value &&
+        !productController.isLastPage.value) {
+      _loadMoreItems();
+    }
+  }
+
+  Future<void> _loadMoreItems() async {
+
+
+    await productController.fetchQuatationproducts( widget.customerId!, isPagination: true);
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
   }
 
   Future<void> _fetchProducts() async {
-    await productController.fetchQuatationproducts(context, widget.customerId!);
-    if (widget.customerId != null) {
+
+    //fetchQuatationproducts    -- for prizes   //widget.customerId!,isPagination: false
+    // await productController.fetchproducts(context, );
+
+    if (widget.customerId != null && widget.page == "opportunity") {
+      await cartController.opp_fetchcartlist(context, widget.customerId!);
+    }
+    if (widget.customerId != null && widget.page == "quotation") {
       await cartController.fetchcartlist(context, widget.customerId!);
+    }
+    if (widget.customerId != null && widget.page == "order") {
+      await cartController.order_fetchcartlist(context, widget.customerId!);
+    }
+    if (widget.customerId != null && (widget.page == "coq"||widget.page == "cqo")) {
+      await cartController.fetchConvertCart(context, widget.customerId!,widget.page!);
     }
 
     final dataList = productController.productList.value;
@@ -53,17 +91,26 @@ class _ProductsState extends State<ProductQuatscreen> {
     // Populate lists
     if (dataList.isNotEmpty) {
       for (int i = 0; i < dataList.length; i++) {
+        // final product = dataList[i];
+        // final productId = product['item_no'].toString();
+        // int quantity = 0;
+        //
+        // for (var cartItem in cartList) {
+        //   if (cartItem['item_no'].toString() == productId) {
+        //     quantity = cartItem['quantity'] ?? 0;
+        //     break;
+        //   }
+        // }
         final product = dataList[i];
-        final productId = product['item_no'].toString();
+        final productId = product['id'].toString();
         int quantity = 0;
 
         for (var cartItem in cartList) {
-          if (cartItem['item_no'].toString() == productId) {
+          if (cartItem['item_id'].toString() == productId) {
             quantity = cartItem['quantity'] ?? 0;
             break;
           }
         }
-
         quantities.add(quantity.obs);
         qtyControllers.add(TextEditingController(text: quantity.toString()));
       }
@@ -75,11 +122,20 @@ class _ProductsState extends State<ProductQuatscreen> {
 
   void incrementQuantity(int index) async {
     if (index < quantities.length && index < qtyControllers.length) {
-      setState(() {
         quantities[index].value++;
         qtyControllers[index].text = quantities[index].value.toString();
-      });
-      await _updateCart(index);
+
+     final response = await _updateCart(index);
+     if(response == "success"){
+       setState(() {});
+     }else{
+       if(qtyControllers[index].text != "0" || qtyControllers[index].text.isNotEmpty) {
+         setState(() {
+         quantities[index].value--;
+         qtyControllers[index].text = quantities[index].value.toString();
+       });
+       }
+     }
     }
   }
 
@@ -89,7 +145,17 @@ class _ProductsState extends State<ProductQuatscreen> {
         quantities[index].value--;
         qtyControllers[index].text = quantities[index].value.toString();
       });
-      await _updateCart(index);
+      final response = await _updateCart(index);
+      if(response == "success"){
+        setState(() {});
+      }else{
+        if(qtyControllers[index].text != "0" || qtyControllers[index].text.isNotEmpty) {
+          setState(() {
+            quantities[index].value++;
+            qtyControllers[index].text = quantities[index].value.toString();
+          });
+        }
+      }
     }
   }
 
@@ -98,29 +164,62 @@ class _ProductsState extends State<ProductQuatscreen> {
   //   setState(() {});
   // }
 
-  Future<void> _updateCart(int index) async {
+  Future<String> _updateCart(int index) async {
     try {
-      if (widget.customerId == null) {
-        Fluttertoast.showToast(
-          msg: "Please Select Customer",
-          toastLength: Toast.LENGTH_SHORT,
-          gravity: ToastGravity.CENTER,
-          backgroundColor: Colors.orange.shade100,
-          textColor: Colors.black,
-          fontSize: 16.0,
-        );
-        return;
-      }
-
+      // if (widget.customerId == null) {
+      //   Fluttertoast.showToast(
+      //     msg: "Please Select Customer",
+      //     toastLength: Toast.LENGTH_SHORT,
+      //     gravity: ToastGravity.CENTER,
+      //     backgroundColor: Colors.orange.shade100,
+      //     textColor: Colors.black,
+      //     fontSize: 16.0,
+      //   );
+      //   return;
+      // }
+//////////coq ---  convert opportunity to quotation
       final product = productController.productList[index];
-      final response = await cartController.addToCart(
+      var response;
+      if(widget.page == 'opportunity' || widget.page == "coq")
+         response =
+      await cartController.Opp_addToCart(
         context,
         product["id"].toString(),
         quantities[index].value,
         widget.customerId!,
-        widget.cardCode!
+        widget.cardCode!,
+        widget.page!,
       );
-     var decodedvalue = response;
+      if(widget.page == 'coq' || widget.page == "cqo")
+        response =
+        await cartController.Convert_addToCart(
+            context,
+            product["id"].toString(),
+            quantities[index].value,
+            widget.customerId!,
+            widget.cardCode!,
+            widget.page!,
+        );
+      if(widget.page == 'quotation')
+         response =
+        await cartController.addToCart(
+            context,
+            product["id"].toString(),
+            quantities[index].value,
+            widget.customerId!,
+            widget.cardCode!
+        );
+      if(widget.page == 'order')
+         response =
+        await cartController.Order_addToCart(
+            context,
+            product["id"].toString(),
+            quantities[index].value,
+            widget.customerId!,
+            widget.cardCode!
+        );
+
+      var decodedvalue = response;
      print('-----------$decodedvalue');
      print(decodedvalue['success']);
       print(decodedvalue['data']['message']);
@@ -134,7 +233,21 @@ class _ProductsState extends State<ProductQuatscreen> {
           textColor: Colors.black,
           fontSize: 16.0,
         );
-        await cartController.fetchcartlist(context, widget.customerId!);
+        return "success";
+        ///#############important to uncompent testing
+        // if(widget.page == 'opportunity') {
+        //   await cartController.opp_fetchcartlist(context, widget.customerId!);
+        // }
+        // if(widget.page == 'quotation') {
+        //   await cartController.fetchcartlist(context, widget.customerId!);
+        // }
+        //  if(widget.page == 'order') {
+        //    await cartController.order_fetchcartlist(context, widget.customerId!);
+        //  }
+        // if(widget.page == "coq" || widget.page == "cqo") {
+        //   await cartController.fetchConvertCart(context, widget.customerId!,widget.page!);
+        // }
+
        // _fetchProducts();
       }else{
         Fluttertoast.showToast(
@@ -145,8 +258,28 @@ class _ProductsState extends State<ProductQuatscreen> {
           textColor: Colors.black,
           fontSize: 16.0,
         );
-       // _fetchProducts();
-        await cartController.fetchcartlist(context, widget.customerId!);
+        return "fail";
+
+        // _fetchProducts();
+       // await cartController.fetchcartlist(context, widget.customerId!);
+
+
+        ///#############important to uncompent testing
+
+
+        // if(widget.page == 'opportunity') {
+        //   await cartController.opp_fetchcartlist(context, widget.customerId!);
+        // }
+        // if(widget.page == 'quotation') {
+        //   await cartController.fetchcartlist(context, widget.customerId!);
+        // }
+        // if(widget.page == 'order') {
+        //   await cartController.order_fetchcartlist(context, widget.customerId!);
+        // }
+        // if(widget.page == "coq" || widget.page == "cqo") {
+        //   await cartController.fetchConvertCart(context, widget.customerId!,widget.page!);
+        // }
+
       }
     } catch (e) {
       Fluttertoast.showToast(
@@ -157,6 +290,8 @@ class _ProductsState extends State<ProductQuatscreen> {
         textColor: Colors.black,
         fontSize: 16.0,
       );
+      return "fail";
+
     }
   }
 
@@ -216,9 +351,13 @@ class _ProductsState extends State<ProductQuatscreen> {
                   ),
                 ),
               ),
-              onChanged: (val) {
+              onChanged: (val) async{
                 print(';hitting in page');
-                productController.searchProductByName(val);
+                if(val.length > 5) {
+                  productController.searchQuery.value = val;
+                  await productController.fetchQuatationproducts(
+                       widget.customerId!, isPagination: false);
+                }
               },
             ),
           ),
@@ -250,9 +389,11 @@ class _ProductsState extends State<ProductQuatscreen> {
         ],
       ),
       body: Stack(children: [
+
         Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
+
             Obx(
                   () => productController.productList.isEmpty
                   ? Shimmer.fromColors(
@@ -310,7 +451,7 @@ class _ProductsState extends State<ProductQuatscreen> {
               ),
             ),
             Obx(() {
-              return productController.isLoading.value
+              return productController.isLoading.value == true
                   ? Expanded(
                 child: ListView.builder(
                   itemCount: 20, // shimmer count
@@ -378,11 +519,9 @@ class _ProductsState extends State<ProductQuatscreen> {
                   padding: const EdgeInsets.all(4.0),
                   child: Obx(() {
                     if (productController.errorMessage.value.isNotEmpty) {
-                      return Center(
-                          child:
-                          Text(productController.errorMessage.value));
-                    } else {
 
+                      return Center(child: Text(productController.errorMessage.value));
+                    } else {
                       if (productController.filteredList.isEmpty) {
                         return Center(
                           child: Text(
@@ -393,11 +532,30 @@ class _ProductsState extends State<ProductQuatscreen> {
                       }
 
                       return ListView.builder(
-                        itemCount: productController.filteredList.length,
+                      controller: _scrollController,
+
+                      itemCount: productController.filteredList.length + (productController.isLoadingMore.value ? 1 : 0),
                         itemBuilder: (context, index) {
+                       if (index == productController.filteredList.length) {
+                            return Center(child: CircularProgressIndicator());
+                         }
+
                           final product = productController.filteredList[index];
 
-                          return IntrinsicHeight(
+
+
+    //
+    // itemCount: customerController.filteredcust.length +
+    // (customerController.isLoadingMore.value ? 1 : 0),
+    // itemBuilder: (context, index) {
+    // if (index == customerController.filteredcust.length) {
+    // return Center(child: CircularProgressIndicator());
+    // }
+    // final item = customerController.filteredcust[index];
+    // final int itemId = item['id'];
+    //
+
+                        return IntrinsicHeight(
                             child: Card(
                               clipBehavior: Clip.antiAliasWithSaveLayer,
                               shape: RoundedRectangleBorder(
@@ -431,17 +589,34 @@ class _ProductsState extends State<ProductQuatscreen> {
                                               CrossAxisAlignment
                                                   .start,
                                               children: [
-                                                Text(
-                                                  product["item_no"] ??
-                                                      'Null',
-                                                  style: const TextStyle(
-                                                    overflow: TextOverflow
-                                                        .ellipsis,
-                                                    fontSize: 16,
-                                                    fontWeight:
-                                                    FontWeight.bold,
-                                                    color: Colors.black,
-                                                  ),
+                                                Row(
+                                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                  children: [
+                                                    Text(
+                                                      product["item_no"] ??
+                                                          'Null',
+                                                      style: const TextStyle(
+                                                        overflow: TextOverflow
+                                                            .ellipsis,
+                                                        fontSize: 16,
+                                                        fontWeight:
+                                                        FontWeight.bold,
+                                                        color: Colors.black,
+                                                      ),
+                                                    ),
+                                                    Text("₹ ${
+                                                      product["price"].toString() ??
+                                                          '--'}",
+                                                      style: const TextStyle(
+                                                        overflow: TextOverflow
+                                                            .ellipsis,
+                                                        fontSize: 11,
+                                                        fontWeight:
+                                                        FontWeight.normal,
+                                                        color: Colors.green,
+                                                      ),
+                                                    ),
+                                                  ],
                                                 ),
                                                 SizedBox(height: 4),
                                                 Text(

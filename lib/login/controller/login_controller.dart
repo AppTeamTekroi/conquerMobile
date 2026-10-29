@@ -3,7 +3,7 @@ import 'package:get/get.dart';
 import 'package:vconquer/login/datasource/auth_service.dart';
 import 'package:vconquer/login/presentation/loginScreen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:vconquer/features/homescreen.dart';
+import 'package:vconquer/features/HomeScreen/homescreen.dart';
 
 
 class LoginController extends GetxController {

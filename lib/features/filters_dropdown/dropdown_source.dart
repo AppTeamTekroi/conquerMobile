@@ -16,10 +16,10 @@ abstract class DropdownSourceRepository {
   Future<Either<Failure, dynamic>> fetchsubCategories(BuildContext context);
   Future<Either<Failure, dynamic>> fetchsalesEmpName(BuildContext context);
   Future<Either<Failure, dynamic>> fetchcountries(BuildContext context);
-  Future<Either<Failure, dynamic>> fetchsearchByGstin(BuildContext context);
+  Future<Either<Failure, dynamic>> fetchsearchByGstin(BuildContext context,String gst);
   Future<Either<Failure, dynamic>> fectchcontact(BuildContext context,String custId);
-
   Future<Either<Failure, dynamic>> billingaddress(BuildContext context,String custId);
+  Future<Either<Failure, dynamic>> fetchArchitect(BuildContext context);
 
 }
 
@@ -34,14 +34,14 @@ class DropdownSourceImpl implements DropdownSourceRepository {
         headers: headers,
       );
       if (response.statusCode == 401) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Unauthorized access'),
-            duration: Duration(seconds: 3),
-            backgroundColor: Colors.red,
-          ),
-        );
-        UnauthDilogbox(); // Call your custom dialog here if needed.
+        // ScaffoldMessenger.of(context).showSnackBar(
+        //   SnackBar(
+        //     content: Text('Unauthorized access'),
+        //     duration: Duration(seconds: 3),
+        //     backgroundColor: Colors.red,
+        //   ),
+        // );
+        // UnauthDilogbox(); // Call your custom dialog here if needed.
         return Left(Failure(
           statusCode: 401,
           message: 'Unauthorized access',
@@ -69,23 +69,23 @@ class DropdownSourceImpl implements DropdownSourceRepository {
   @override
   Future<Either<Failure, dynamic>> fetchcategories(BuildContext context) async {
     try {
-      print(id);
+      // print(id);
       final headers = await ApiHelper.getHeaders();
       final response = await http.get(
         Uri.parse(URLConst.baseURL+URLConst.categories),
         headers: headers,
       );
-      print("ID fetched: ${response.body}");
+      // print("ID fetched: ${response.body}");
 
       if (response.statusCode == 401) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Unauthorized access'),
-            duration: Duration(seconds: 3),
-            backgroundColor: Colors.red,
-          ),
-        );
-        UnauthDilogbox(); // Call your custom dialog here if needed.
+        // ScaffoldMessenger.of(context).showSnackBar(
+        //   SnackBar(
+        //     content: Text('Unauthorized access'),
+        //     duration: Duration(seconds: 3),
+        //     backgroundColor: Colors.red,
+        //   ),
+        // );
+        // UnauthDilogbox(); // Call your custom dialog here if needed.
         return Left(Failure(
           statusCode: 401,
           message: 'Unauthorized access',
@@ -93,8 +93,8 @@ class DropdownSourceImpl implements DropdownSourceRepository {
       }
 
       if (response.statusCode == 200) {
-        print("ID fetched: ${response.body}");
-        final List<dynamic> jsonResponse = json.decode(response.body);
+        // print("ID fetched: ${response.body}");
+        final Map<String,dynamic> jsonResponse = json.decode(response.body);
         return Right(jsonResponse);
       } else {
         return Left(Failure(
@@ -113,7 +113,7 @@ class DropdownSourceImpl implements DropdownSourceRepository {
   @override
   Future<Either<Failure, dynamic>> fetchsubCategories(BuildContext context) async {
     try {
-      print(id);
+      // print(id);
       final headers = await ApiHelper.getHeaders();
       final response = await http.get(
         Uri.parse(URLConst.baseURL+URLConst.subCategories),
@@ -122,14 +122,14 @@ class DropdownSourceImpl implements DropdownSourceRepository {
       print("ID fetched: ${response.body}");
 
       if (response.statusCode == 401) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Unauthorized access'),
-            duration: Duration(seconds: 3),
-            backgroundColor: Colors.red,
-          ),
-        );
-        UnauthDilogbox(); // Call your custom dialog here if needed.
+        // ScaffoldMessenger.of(context).showSnackBar(
+        //   SnackBar(
+        //     content: Text('Unauthorized access'),
+        //     duration: Duration(seconds: 3),
+        //     backgroundColor: Colors.red,
+        //   ),
+        // );
+        // UnauthDilogbox(); // Call your custom dialog here if needed.
         return Left(Failure(
           statusCode: 401,
           message: 'Unauthorized access',
@@ -137,8 +137,8 @@ class DropdownSourceImpl implements DropdownSourceRepository {
       }
 
       if (response.statusCode == 200) {
-        print("ID fetched: ${response.body}");
-        final List<dynamic> jsonResponse = json.decode(response.body);
+        // print("ID fetched: ${response.body}");
+        final Map<String,dynamic> jsonResponse = json.decode(response.body);
         return Right(jsonResponse);
       } else {
         return Left(Failure(
@@ -157,7 +157,7 @@ class DropdownSourceImpl implements DropdownSourceRepository {
   @override
   Future<Either<Failure, dynamic>> fetchsalesEmpName(BuildContext context) async {
     try {
-      print(id);
+      // print(id);
       final headers = await ApiHelper.getHeaders();
       final response = await http.get(
         Uri.parse(URLConst.baseURL+URLConst.salesEmpName),
@@ -166,14 +166,14 @@ class DropdownSourceImpl implements DropdownSourceRepository {
       print("ID fetched: ${response.body}");
 
       if (response.statusCode == 401) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Unauthorized access'),
-            duration: Duration(seconds: 3),
-            backgroundColor: Colors.red,
-          ),
-        );
-        UnauthDilogbox(); // Call your custom dialog here if needed.
+        // ScaffoldMessenger.of(context).showSnackBar(
+        //   SnackBar(
+        //     content: Text('Unauthorized access'),
+        //     duration: Duration(seconds: 3),
+        //     backgroundColor: Colors.red,
+        //   ),
+        // );
+        // UnauthDilogbox(); // Call your custom dialog here if needed.
         return Left(Failure(
           statusCode: 401,
           message: 'Unauthorized access',
@@ -181,8 +181,8 @@ class DropdownSourceImpl implements DropdownSourceRepository {
       }
 
       if (response.statusCode == 200) {
-        print("ID fetched: ${response.body}");
-        final List<dynamic> jsonResponse = json.decode(response.body);
+        // print("Saled Employye fetched: ${response.body}");
+        final Map<String,dynamic> jsonResponse = json.decode(response.body);
         return Right(jsonResponse);
       } else {
         return Left(Failure(
@@ -201,7 +201,7 @@ class DropdownSourceImpl implements DropdownSourceRepository {
   @override
   Future<Either<Failure, dynamic>> fetchcountries(BuildContext context) async {
     try {
-      print(id);
+      // print(id);
       final headers = await ApiHelper.getHeaders();
       final response = await http.get(
         Uri.parse(URLConst.baseURL+URLConst.countries),
@@ -210,14 +210,14 @@ class DropdownSourceImpl implements DropdownSourceRepository {
      // print("ID fetched: ${response.body}");
 
       if (response.statusCode == 401) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Unauthorized access'),
-            duration: Duration(seconds: 3),
-            backgroundColor: Colors.red,
-          ),
-        );
-        UnauthDilogbox(); // Call your custom dialog here if needed.
+        // ScaffoldMessenger.of(context).showSnackBar(
+        //   SnackBar(
+        //     content: Text('Unauthorized access'),
+        //     duration: Duration(seconds: 3),
+        //     backgroundColor: Colors.red,
+        //   ),
+        // );
+        // UnauthDilogbox(); // Call your custom dialog here if needed.
         return Left(Failure(
           statusCode: 401,
           message: 'Unauthorized access',
@@ -225,8 +225,8 @@ class DropdownSourceImpl implements DropdownSourceRepository {
       }
 
       if (response.statusCode == 200) {
-        print("ID fetched: ${response.body}");
-        final List<dynamic> jsonResponse = json.decode(response.body);
+        // print("ID fetched: ${response.body}");
+        final Map<String,dynamic> jsonResponse = json.decode(response.body);
         return Right(jsonResponse);
       } else {
         return Left(Failure(
@@ -243,25 +243,27 @@ class DropdownSourceImpl implements DropdownSourceRepository {
   }
 
   @override
-  Future<Either<Failure, dynamic>> fetchsearchByGstin(BuildContext context) async {
+  Future<Either<Failure, dynamic>> fetchsearchByGstin(BuildContext context,gst) async {
     try {
-      print(id);
+
+   final url = '${URLConst.baseURL}${URLConst.searchByGstin}?gstNumber=$gst';
+   print(url);
       final headers = await ApiHelper.getHeaders();
       final response = await http.get(
-        Uri.parse(URLConst.baseURL+URLConst.searchByGstin),
+        Uri.parse(url),
         headers: headers,
       );
-     // print("ID fetched: ${response.body}");
+      print("ID fetched: ${response.body}");
 
       if (response.statusCode == 401) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Unauthorized access'),
-            duration: Duration(seconds: 3),
-            backgroundColor: Colors.red,
-          ),
-        );
-        UnauthDilogbox(); // Call your custom dialog here if needed.
+        // ScaffoldMessenger.of(context).showSnackBar(
+        //   SnackBar(
+        //     content: Text('Unauthorized access'),
+        //     duration: Duration(seconds: 3),
+        //     backgroundColor: Colors.red,
+        //   ),
+        // );
+        // UnauthDilogbox(); // Call your custom dialog here if needed.
         return Left(Failure(
           statusCode: 401,
           message: 'Unauthorized access',
@@ -288,7 +290,7 @@ class DropdownSourceImpl implements DropdownSourceRepository {
   @override
   Future<Either<Failure, dynamic>> fectchcontact(BuildContext context,customerId) async {
     try {
-      print(id);
+      // print(id);
       final headers = await ApiHelper.getHeaders();
       final response = await http.get(
         Uri.parse(URLConst.baseURL+URLConst.contact+customerId),
@@ -297,14 +299,14 @@ class DropdownSourceImpl implements DropdownSourceRepository {
      // print("ID fetched: ${response.body}");
 
       if (response.statusCode == 401) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Unauthorized access'),
-            duration: Duration(seconds: 3),
-            backgroundColor: Colors.red,
-          ),
-        );
-        UnauthDilogbox(); // Call your custom dialog here if needed.
+        // ScaffoldMessenger.of(context).showSnackBar(
+        //   SnackBar(
+        //     content: Text('Unauthorized access'),
+        //     duration: Duration(seconds: 3),
+        //     backgroundColor: Colors.red,
+        //   ),
+        // );
+        // UnauthDilogbox(); // Call your custom dialog here if needed.
         return Left(Failure(
           statusCode: 401,
           message: 'Unauthorized access',
@@ -340,14 +342,14 @@ class DropdownSourceImpl implements DropdownSourceRepository {
      // print("ID fetched: ${response.body}");
 
       if (response.statusCode == 401) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Unauthorized access'),
-            duration: Duration(seconds: 3),
-            backgroundColor: Colors.red,
-          ),
-        );
-        UnauthDilogbox(); // Call your custom dialog here if needed.
+        // ScaffoldMessenger.of(context).showSnackBar(
+        //   SnackBar(
+        //     content: Text('Unauthorized access'),
+        //     duration: Duration(seconds: 3),
+        //     backgroundColor: Colors.red,
+        //   ),
+        // );
+        // UnauthDilogbox(); // Call your custom dialog here if needed.
         return Left(Failure(
           statusCode: 401,
           message: 'Unauthorized access',
@@ -383,14 +385,14 @@ class DropdownSourceImpl implements DropdownSourceRepository {
       print("ID fetched: ${response.body}");
 
       if (response.statusCode == 401) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Unauthorized access'),
-            duration: Duration(seconds: 3),
-            backgroundColor: Colors.red,
-          ),
-        );
-        UnauthDilogbox(); // Call your custom dialog here if needed.
+        // ScaffoldMessenger.of(context).showSnackBar(
+        //   SnackBar(
+        //     content: Text('Unauthorized access'),
+        //     duration: Duration(seconds: 3),
+        //     backgroundColor: Colors.red,
+        //   ),
+        // );
+        // UnauthDilogbox(); // Call your custom dialog here if needed.
         return Left(Failure(
           statusCode: 401,
           message: 'Unauthorized access',
@@ -423,17 +425,17 @@ class DropdownSourceImpl implements DropdownSourceRepository {
         Uri.parse(URLConst.baseURL+URLConst.payterm),
         headers: headers,
       );
-     // print("ID fetched: ${response.body}");
+     print("Payment terms: ${response.body}");
 
       if (response.statusCode == 401) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Unauthorized access'),
-            duration: Duration(seconds: 3),
-            backgroundColor: Colors.red,
-          ),
-        );
-        UnauthDilogbox(); // Call your custom dialog here if needed.
+        // ScaffoldMessenger.of(context).showSnackBar(
+        //   SnackBar(
+        //     content: Text('Unauthorized access'),
+        //     duration: Duration(seconds: 3),
+        //     backgroundColor: Colors.red,
+        //   ),
+        // );
+        // UnauthDilogbox(); // Call your custom dialog here if needed.
         return Left(Failure(
           statusCode: 401,
           message: 'Unauthorized access',
@@ -457,4 +459,171 @@ class DropdownSourceImpl implements DropdownSourceRepository {
       ));
     }
   }
+  @override
+  Future<Either<Failure, dynamic>> fetchwarranty(BuildContext context) async {
+    try {
+      final headers = await ApiHelper.getHeaders();
+      final response = await http.get(
+        Uri.parse(URLConst.baseURL+URLConst.warranty),
+        headers: headers,
+      );
+      print("List fetched: ${response.body}");
+      if (response.statusCode == 401) {
+        // ScaffoldMessenger.of(context).showSnackBar(
+        //   SnackBar(
+        //     content: Text('Unauthorized access'),
+        //     duration: Duration(seconds: 3),
+        //     backgroundColor: Colors.red,
+        //   ),
+        // );
+        // UnauthDilogbox(); // Call your custom dialog here if needed.
+        return Left(Failure(
+          statusCode: 401,
+          message: 'Unauthorized access',
+        ));
+      }
+
+      if (response.statusCode == 200) {
+        print("List fetched: ${response.body}");
+        final List<dynamic> jsonResponse = json.decode(response.body);
+        return Right(jsonResponse);
+      } else {
+        return Left(Failure(
+          statusCode: response.statusCode,
+          message: 'Failed to fetch customers data',
+        ));
+      }
+    } catch (e) {
+      return Left(Failure(
+        statusCode: 500,
+        message: 'Error occurred: $e',
+      ));
+    }
+  }
+  @override
+  Future<Either<Failure, dynamic>> fetchdelivery(BuildContext context) async {
+    try {
+      final headers = await ApiHelper.getHeaders();
+      final response = await http.get(
+        Uri.parse(URLConst.baseURL+URLConst.delivery),
+        headers: headers,
+      );
+      if (response.statusCode == 401) {
+        // ScaffoldMessenger.of(context).showSnackBar(
+        //   SnackBar(
+        //     content: Text('Unauthorized access'),
+        //     duration: Duration(seconds: 3),
+        //     backgroundColor: Colors.red,
+        //   ),
+        // );
+        // UnauthDilogbox(); // Call your custom dialog here if needed.
+        return Left(Failure(
+          statusCode: 401,
+          message: 'Unauthorized access',
+        ));
+      }
+
+      if (response.statusCode == 200) {
+        print("List fetched: ${response.body}");
+        final List<dynamic> jsonResponse = json.decode(response.body);
+        return Right(jsonResponse);
+      } else {
+        return Left(Failure(
+          statusCode: response.statusCode,
+          message: 'Failed to fetch customers data',
+        ));
+      }
+    } catch (e) {
+      return Left(Failure(
+        statusCode: 500,
+        message: 'Error occurred: $e',
+      ));
+    }
+  }
+  @override
+  Future<Either<Failure, dynamic>> fetchvalidity(BuildContext context) async {
+    try {
+      final headers = await ApiHelper.getHeaders();
+      final response = await http.get(
+        Uri.parse(URLConst.baseURL+URLConst.validity),
+        headers: headers,
+      );
+      if (response.statusCode == 401) {
+        // ScaffoldMessenger.of(context).showSnackBar(
+        //   SnackBar(
+        //     content: Text('Unauthorized access'),
+        //     duration: Duration(seconds: 3),
+        //     backgroundColor: Colors.red,
+        //   ),
+        // );
+        // UnauthDilogbox(); // Call your custom dialog here if needed.
+        return Left(Failure(
+          statusCode: 401,
+          message: 'Unauthorized access',
+        ));
+      }
+
+      if (response.statusCode == 200) {
+        print("List fetched: ${response.body}");
+        final List<dynamic> jsonResponse = json.decode(response.body);
+        return Right(jsonResponse);
+      } else {
+        return Left(Failure(
+          statusCode: response.statusCode,
+          message: 'Failed to fetch customers data',
+        ));
+      }
+    } catch (e) {
+      return Left(Failure(
+        statusCode: 500,
+        message: 'Error occurred: $e',
+      ));
+    }
+  }
+
+  @override
+  Future<Either<Failure, dynamic>> fetchArchitect(BuildContext context) async {
+    try {
+      // print(id);
+      final headers = await ApiHelper.getHeaders();
+      final response = await http.get(
+        Uri.parse(URLConst.baseURL+URLConst.architect),
+        headers: headers,
+      );
+       print("ID fetched: ${response.body}");
+
+      if (response.statusCode == 401) {
+        // ScaffoldMessenger.of(context).showSnackBar(
+        //   SnackBar(
+        //     content: Text('Unauthorized access'),
+        //     duration: Duration(seconds: 3),
+        //     backgroundColor: Colors.red,
+        //   ),
+        // );
+        // UnauthDilogbox(); // Call your custom dialog here if needed.
+        return Left(Failure(
+          statusCode: 401,
+          message: 'Unauthorized access',
+        ));
+      }
+
+      if (response.statusCode == 200) {
+        // print("ID fetched: ${response.body}");
+        final Map<String,dynamic> jsonResponse = json.decode(response.body);
+        return Right(jsonResponse);
+      } else {
+        return Left(Failure(
+          statusCode: response.statusCode,
+          message: 'Failed to fetch id details',
+        ));
+      }
+    } catch (e) {
+      return Left(Failure(
+        statusCode: 500,
+        message: 'Error occurred: $e',
+      ));
+    }
+  }
+
+
 }

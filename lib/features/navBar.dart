@@ -3,11 +3,14 @@ import "package:flutter/material.dart";
 import 'package:get/get.dart';
 import 'package:get/get_core/src/get_main.dart';
 import 'package:vconquer/features/products/Products.dart';
+import 'package:vconquer/features/products/product_controller.dart';
 import 'package:vconquer/features/userController.dart';
 
 import '../ui/color/appColor.dart';
+import 'HomeScreen/home_controller.dart';
+import 'customers/customer_controller.dart';
 import 'customers/customer_screen.dart';
-import 'homescreen.dart';
+import 'HomeScreen/homescreen.dart';
 
 
 class BottomNav extends StatefulWidget {
@@ -18,15 +21,25 @@ class BottomNav extends StatefulWidget {
 }
 
 class _BottomNavState extends State<BottomNav> {
-  // final String isBarterFamily = 'yes';
-  UserController uc = Get.put(UserController());
-
+  late UserController uc;
+  late HomescreenController hc;
+  late ProductController productController;
+  late CustomerController customerController;
 
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
-    // checkBarterFamily();
+
+    uc = Get.find<UserController>();
+    hc = Get.find<HomescreenController>();
+    productController = Get.find<ProductController>();
+    customerController = Get.find<CustomerController>();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      hc.YtdDetails();
+      productController.fetchproducts();
+      customerController.fetchUser();
+    });
   }
 
   int _selectedIndex = 0;

@@ -23,8 +23,8 @@ class Products extends StatefulWidget {
 }
 
 class _ProductsState extends State<Products> {
-  final ProductController productController = Get.put(ProductController());
-  CartController cartController = Get.put(CartController());
+  final ProductController productController = Get.find();
+  CartController cartController = Get.find();
   final List<RxInt> quantities = [];
   final List<TextEditingController> qtyControllers = [];
   String filter = "";
@@ -38,7 +38,7 @@ class _ProductsState extends State<Products> {
   }
 
   Future<void> _fetchProducts() async {
-    await productController.fetchproducts(context);
+    // await productController.fetchproducts(context);
     if (widget.customerId != null) {
      // await cartController.fetchcartlist(context, widget.customerId!);
     }
@@ -197,7 +197,7 @@ class _ProductsState extends State<Products> {
           ),
         ),
         actions: [
-          if (widget.customerId != null)
+          if (widget.customerId != '' && widget.customerId != null)
             Padding(
               padding: const EdgeInsets.only(right: 15),
               child: GestureDetector(
@@ -207,7 +207,7 @@ class _ProductsState extends State<Products> {
                 ),
               ),
             ),
-          if (widget.customerId != null)
+          if (widget.customerId != '' && widget.customerId != null)
             Padding(
               padding: const EdgeInsets.only(right: 10),
               child: GestureDetector(
@@ -415,17 +415,35 @@ class _ProductsState extends State<Products> {
                                                         CrossAxisAlignment
                                                             .start,
                                                     children: [
-                                                      Text(
-                                                        product["item_no"] ??
-                                                            'Null',
-                                                        style: const TextStyle(
-                                                          overflow: TextOverflow
-                                                              .ellipsis,
-                                                          fontSize: 16,
-                                                          fontWeight:
-                                                              FontWeight.bold,
-                                                          color: Colors.black,
-                                                        ),
+                                                      Row(
+                                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                        children: [
+                                                          Text(
+                                                            product["item_no"] ??
+                                                                'Null',
+                                                            style: const TextStyle(
+                                                              overflow: TextOverflow
+                                                                  .ellipsis,
+                                                              fontSize: 16,
+                                                              fontWeight:
+                                                                  FontWeight.bold,
+                                                              color: Colors.black,
+                                                            ),
+                                                          ),
+                                                  Text("₹ ${
+                                                    product["price"].toString() ??
+                                                        '--'}",
+                                                    style: const TextStyle(
+                                                      overflow: TextOverflow
+                                                          .ellipsis,
+                                                      fontSize: 11,
+                                                      fontWeight:
+                                                      FontWeight.bold,
+                                                      color: Colors.green,
+                                                    ),
+                                                  ),
+
+                                                        ],
                                                       ),
                                                       SizedBox(height: 4),
                                                       Text(
@@ -459,40 +477,48 @@ class _ProductsState extends State<Products> {
                                                                     "gst_rate"] ??
                                                                 '--',
                                                           ),
-                                                          CommonRichText(
-                                                            label: "Stock: ",
-                                                            value: product[
-                                                            "in_stock"] ??
-                                                                '--',
-                                                          ),
+                                                          // CommonRichText(
+                                                          //   label: "Stock: ",
+                                                          //   value: product[
+                                                          //   "in_stock"] ??
+                                                          //       '--',
+                                                          // ),
                                                         ],
                                                       ),
                                                   SizedBox(height: 5),
-                                                  // Row(
-                                                  //   mainAxisAlignment:
-                                                  //   MainAxisAlignment
-                                                  //       .spaceBetween,
-                                                  //   children: [
-                                                  //     CommonRichText(
-                                                  //       label: "Price : ",
-                                                  //       value: product[
-                                                  //       "price"] ??
-                                                  //           '--',
-                                                  //     ),
-                                                  //     CommonRichText(
-                                                  //       label: "HSN : ",
-                                                  //       value: product[
-                                                  //       "hsn_code"] ??
-                                                  //           '--',
-                                                  //     ),
-                                                  //     CommonRichText(
-                                                  //       label: "Stock: ",
-                                                  //       value: product[
-                                                  //       "in_stock"] ??
-                                                  //           '--',
-                                                  //     ),
-                                                  //   ],
-                                                  // ),
+                                                  Row(
+                                                    mainAxisAlignment:
+                                                    MainAxisAlignment
+                                                        .spaceBetween,
+                                                    children: [
+                                                      CommonRichText(
+                                                        label: "HSN : ",
+                                                        value: product[
+                                                        "hsn_code"] ??
+                                                            '--',
+                                                      ),
+                                                      CommonRichText(
+                                                        label: "Stock: ",
+                                                        value: product[
+                                                        "in_stock"] ??
+                                                            '--',
+                                                      ),
+                                                    ],
+                                                  ),
+                                                      Row(
+                                                        mainAxisAlignment:
+                                                        MainAxisAlignment
+                                                            .end,
+                                                        children: [
+                                                          CommonRichText(
+                                                            label: "Price : ",
+                                                            value: product[
+                                                            "price"] ??
+                                                                '--',
+                                                          ),
+
+                                                        ],
+                                                      ),
 
                                                       if (widget.customerId
                                                               ?.isNotEmpty ??

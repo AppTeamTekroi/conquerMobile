@@ -7,12 +7,17 @@ class DropdownController extends GetxController {
   final DropdownSourceImpl dropdownSourceImpl = DropdownSourceImpl();
   var isLoading = false.obs;
   var errorMessage = ''.obs;
-  var branch = [].obs;
-  var categories = [].obs;
-  var subCategories = [].obs;
-  var salesEmpName = [].obs;
-  var countries = [].obs;
-  var searchByGstin = [].obs;
+  var branch = {}.obs;
+  var categories = {}.obs;
+  var subCategories = {}.obs;
+  var salesEmpName = {}.obs;
+  var countries = {}.obs;
+  var searchByGstin = {}.obs;
+  var architech = {}.obs;
+var warranty= [].obs;
+  var delivery= [].obs;
+  var validity= [].obs;
+
   var errorMessage1 = ''.obs;
   var errorMessage2 = ''.obs;
   var errorMessage3= ''.obs;
@@ -163,11 +168,11 @@ class DropdownController extends GetxController {
   }
 
   @override
-  Future<void> fetchsearchByGstin(BuildContext context) async {
+  Future<void> fetchsearchByGstin(BuildContext context,String gst) async {
     print('fetching 1 api');
     try {
       isLoading5.value = true;
-      final result = await dropdownSourceImpl.fetchsearchByGstin(context);
+      final result = await dropdownSourceImpl.fetchsearchByGstin(context,gst);
       result.fold((failure) {
         isLoading5.value = false;
         errorMessage5.value = 'Error: ${failure.message}';
@@ -270,6 +275,94 @@ class DropdownController extends GetxController {
     } catch (e) {
       isLoading9.value = false;
       errorMessage9.value = 'An error occurred: ${e.toString()};';
+    }
+  }
+
+
+  @override
+  Future<void> fetchwarrenty(BuildContext context) async {
+    print('fetching 1 api');
+    try {
+      isLoading.value = true;
+      final result = await dropdownSourceImpl.fetchwarranty(context);
+      result.fold((failure) {
+        isLoading.value = false;
+        errorMessage.value = 'Error: ${failure.message}';
+      },
+              (responseData) {
+                warranty.value = responseData;
+            print('***********Duty data successfully fetched in controller');
+            errorMessage.value = '';
+            isLoading.value = false;
+          }
+      );
+    } catch (e) {
+      isLoading.value = false;
+      errorMessage.value = 'An error occurred: ${e.toString()};';
+    }
+  } @override
+  Future<void> fetchdelivery(BuildContext context) async {
+    print('fetching 1 api');
+    try {
+      isLoading.value = true;
+      final result = await dropdownSourceImpl.fetchdelivery(context);
+      result.fold((failure) {
+        isLoading.value = false;
+        errorMessage.value = 'Error: ${failure.message}';
+      },
+              (responseData) {
+            delivery.value = responseData;
+            print('***********Duty data successfully fetched in controller');
+            errorMessage.value = '';
+            isLoading.value = false;
+          }
+      );
+    } catch (e) {
+      isLoading.value = false;
+      errorMessage.value = 'An error occurred: ${e.toString()};';
+    }
+  } @override
+  Future<void> fetchvalidity(BuildContext context) async {
+    print('fetching 1 api');
+    try {
+      isLoading.value = true;
+      final result = await dropdownSourceImpl.fetchvalidity(context);
+      result.fold((failure) {
+        isLoading.value = false;
+        errorMessage.value = 'Error: ${failure.message}';
+      },
+              (responseData) {
+            validity.value = responseData;
+            print('***********Duty data successfully fetched in controller');
+            errorMessage.value = '';
+            isLoading.value = false;
+          }
+      );
+    } catch (e) {
+      isLoading.value = false;
+      errorMessage.value = 'An error occurred: ${e.toString()};';
+    }
+  }
+  @override
+  Future<void> fetchSolutionArchitect(BuildContext context) async {
+    print('fetching 1 api');
+    try {
+      isLoading1.value = true;
+      final result = await dropdownSourceImpl.fetchArchitect(context);
+      result.fold((failure) {
+        isLoading1.value = false;
+        errorMessage1.value = 'Error: ${failure.message}';
+      },
+              (responseData) {
+            architech.value = responseData;
+            print('***********Duty data successfully fetched in controller');
+            errorMessage1.value = '';
+            isLoading1.value = false;
+          }
+      );
+    } catch (e) {
+      isLoading1.value = false;
+      errorMessage1.value = 'An error occurred: ${e.toString()};';
     }
   }
 }

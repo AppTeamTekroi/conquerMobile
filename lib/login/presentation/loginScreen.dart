@@ -18,7 +18,7 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  LoginController loginController = Get.put(LoginController(), permanent: true);
+  LoginController loginController = Get.find();
 
   bool showCredentialsText = false;
 
@@ -36,17 +36,22 @@ class _LoginScreenState extends State<LoginScreen> {
     final height = MediaQuery.of(context).size.height;
     final width = MediaQuery.of(context).size.width;
     return Scaffold(
+      backgroundColor: Colors.grey.shade200,
       body: Center(
         child: Container(
           height: height,
           width: width,
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomCenter,
-              colors: [AppColors.primary, AppColors.primary],
-            ),
-          ),
+          // decoration: BoxDecoration(
+          //   image: DecorationImage(
+          //     image: AssetImage('lib/ui/assets/6530.jpg'), // Replace with your image path
+          //     fit: BoxFit.cover, // or BoxFit.fill, BoxFit.contain, etc.
+          //   ),
+            // gradient: LinearGradient(
+            //   begin: Alignment.topLeft,
+            //   end: Alignment.bottomCenter,
+            //   colors: [AppColors.primary, AppColors.primary],
+            // ),
+        //  ),
           child: SingleChildScrollView(
             physics: const BouncingScrollPhysics(),
             child:
@@ -58,17 +63,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 SizedBox(
                   height: height * 0.10,
                 ),
-                Padding(
-                  padding: EdgeInsets.only(left: width * 0.075),
-                  child: const Text(
-                    "Welcome!",
-                    style: TextStyle(
-                        fontSize: 40,
-                        letterSpacing: 2,
-                        color: Colors.black,
-                        fontWeight: FontWeight.w900),
-                  ),
-                ),
+
                 // Padding(
                 //   padding: EdgeInsets.only(left: width * 0.075),
                 //   child: Container(
@@ -81,22 +76,47 @@ class _LoginScreenState extends State<LoginScreen> {
                 //     ),
                 //   ),
                 // ),
-                // Padding(
-                //   padding: EdgeInsets.only(
-                //       left: width * 0.075,
-                //       right: width * 0.075,
-                //       top: width * 0.045,
-                //       bottom: width * 0.075),
-                //   child: Container(
-                //     height: 50,
-                //     child:const Image(
-                //       fit: BoxFit.cover,
-                //       image: AssetImage(
-                //         'lib/ui/assets/client.png',
-                //       ),
-                //     ),
-                //   ),
-                // ),
+                Padding(
+                  padding: EdgeInsets.only(
+                      left: width * 0.075,
+                      right: width * 0.075,
+                      top: width * 0.045,
+                      bottom: width * 0.075),
+                  child: Container(
+                    height: 70,
+                    child:const Image(
+                      fit: BoxFit.cover,
+                      image: AssetImage(
+                        'lib/ui/assets/client.png',
+                      ),
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: EdgeInsets.only(left: width * 0.075),
+                  child: const Text(
+                    "Welcome to Conquer",
+                    style: TextStyle(
+                        fontSize: 17,
+                        // letterSpacing: 1,
+                        color: Colors.black,
+                        fontWeight: FontWeight.w900),
+                  ),
+                ),
+          SizedBox(height: 10,),
+          Padding(
+            padding: EdgeInsets.only(left: width * 0.075),
+            child: const Text(
+                " Access opportunities. Take action. Deliver success.!\n  — All in one place",
+                style: TextStyle(
+                fontSize: 13,
+                 letterSpacing: 1,
+                color: Colors.black,
+                fontWeight: FontWeight.w400),
+          ),
+        ),
+                SizedBox(height: 10,),
+
                 Padding(
                   padding: EdgeInsets.only(
                       left: width * 0.075,
@@ -107,7 +127,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     height: height * 0.44,
                     width: width * 0.85,
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: Colors.white54,
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Padding(
@@ -273,7 +293,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                             response['access_token'] !=
                                                 null) {
                                           loginController.token = response['access_token'];
-                                          loginController.branch = response['branch_name'];
+                                          loginController.branch = response['branch_name'] ?? '';
 
                                           print("${response['access_token']}");
                                           final SharedPreferences _prefs =

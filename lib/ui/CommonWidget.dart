@@ -1,26 +1,92 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:get/get_navigation/src/snackbar/snackbar.dart';
 import 'package:google_fonts/google_fonts.dart';
+
+import 'color/appColor.dart';
 
 class CommonWidget {
 
+  static void showSnackbar({required bool status, required String message,}) {
+    Get.snackbar(
+      "",
+      "",
+      snackPosition: SnackPosition.BOTTOM,
+      snackStyle: SnackStyle.FLOATING,
+      duration: const Duration(seconds: 3),
+
+      backgroundColor: status ? Colors.green.shade50 : Colors.red.shade50,
+      borderColor: status ? Colors.green : Colors.red,
+      borderWidth: 1.5,
+
+      icon: Icon(
+        status ? Icons.check_circle : Icons.error,
+        color: status ? Colors.green.shade800 : Colors.red.shade800,
+      ),
+
+      titleText: Text(
+        status ? "Success" : "Error",
+        style: TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.bold,
+          color: status ? Colors.green.shade900 : Colors.red.shade900,
+        ),
+      ),
+
+      messageText: Text(
+        message,
+        style: const TextStyle(
+          fontSize: 14,
+          color: Colors.black87,
+        ),
+      ),
+    );
+  }
+
+
+  // static void showSnackbar({required bool status, required String message}) {
+  //   Get.snackbar(
+  //     status ? "Success" : "Error",
+  //     "",
+  //     snackPosition: SnackPosition.BOTTOM, // ✅ Display at the bottom
+  //     backgroundColor: status ? AppColors.white : Colors.red, // ✅ Success (green) or error color
+  //     colorText: Colors.black,
+  //     borderColor: status ? Colors.green : Colors.red,
+  //     borderWidth: 1.5,
+  //     duration: Duration(seconds: 3), // ✅ Auto-dismiss after 3 seconds
+  //     icon: Icon(
+  //       status ? Icons.check_circle : Icons.error, // ✅ Tick icon for success, error icon otherwise
+  //       color: Colors.green.shade900,
+  //     ),
+  //     snackStyle: SnackStyle.FLOATING, // ✅ Floating style snackbar
+  //     titleText: Text(
+  //       status ? "Success" : "Error",
+  //       style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black87),
+  //     ),
+  //     messageText: Text(
+  //       message,
+  //       style: TextStyle(fontSize: 14, color: Colors.black87),
+  //     ),
+  //   );
+  // }
  static InputDecoration dropdecoration(String hintText,EdgeInsets padding) {
   return InputDecoration(
       hintText: hintText,
       contentPadding: padding,
       border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(9),
+        borderRadius: BorderRadius.circular(5),
       ),
       enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(9),
+        borderRadius: BorderRadius.circular(5),
         borderSide: BorderSide(color: Colors.grey),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(9),
         borderSide: BorderSide(color: Colors.grey),
       ),
-      hintStyle: const TextStyle(
-          color: Colors.black,
-          fontWeight: FontWeight.bold),
+      hintStyle:  TextStyle(
+          color: Colors.grey,
+          fontWeight: FontWeight.normal),
 
   );
 
@@ -180,18 +246,18 @@ class CommonWidget {
     );
   }
 
-  static void showSnackBar(BuildContext context, String message) {
-    final snackBar = SnackBar(
-        backgroundColor: Colors.red[100],
-        content: Container(
-            child: Text(
-              message,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                  color: Colors.red, fontWeight: FontWeight.w500, fontSize: 16),
-            )));
-    ScaffoldMessenger.of(context).showSnackBar(snackBar);
-  }
+  // static void showSnackBar(BuildContext context, String message) {
+  //   final snackBar = SnackBar(
+  //       backgroundColor: Colors.red[100],
+  //       content: Container(
+  //           child: Text(
+  //             message,
+  //             textAlign: TextAlign.center,
+  //             style: TextStyle(
+  //                 color: Colors.red, fontWeight: FontWeight.w500, fontSize: 16),
+  //           )));
+  //   ScaffoldMessenger.of(context).showSnackBar(snackBar);
+  // }
 
   static ButtonStyle commonbuttonStyle =
   ElevatedButton.styleFrom(

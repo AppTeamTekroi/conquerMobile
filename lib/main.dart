@@ -4,7 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:vconquer/login/controller/login_controller.dart';
-import 'package:vconquer/features/homescreen.dart';
+import 'package:vconquer/features/HomeScreen/homescreen.dart';
+import 'package:vconquer/ui/app_binding.dart';
+
+import 'login/controller/login_controller.dart';
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
   SystemChrome.setPreferredOrientations([
@@ -30,6 +33,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return GetMaterialApp(
       debugShowCheckedModeBanner: false,
+      initialBinding: AppBinding(),
       title: 'vconquer',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
@@ -37,6 +41,7 @@ class MyApp extends StatelessWidget {
       ),
       home: FutureBuilder<bool>(
         future: _checkLoginStatus(),
+
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Scaffold(

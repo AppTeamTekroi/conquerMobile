@@ -1,39 +1,73 @@
+import 'package:flutter/material.dart';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
-import 'package:vconquer/features/Quatation/new_quatation_page.dart';
-import 'package:vconquer/features/Quatation/quatation_controller.dart';
+import 'package:shimmer/shimmer.dart';
+import 'package:vconquer/features/Opportunities/New_Opportunities.dart';
 import 'package:vconquer/features/navBar.dart';
 
 import '../../ui/color/appColor.dart';
 import '../../ui/richtext.dart';
+import '../Quatation/new_quatation_page.dart';
 import '../orderlist/order_controller.dart';
-import '../orderlist/order_details.dart';
+import '../Quatation/quatation_details.dart';
+import 'opportunity_controller.dart';
 
-class QuatationListScreen extends StatefulWidget {
-  QuatationListScreen({
+class OpportunitiesPage extends StatefulWidget {
+  OpportunitiesPage({
     super.key,
   });
   @override
-  State<QuatationListScreen> createState() => _QuatationListScreentate();
+  State<OpportunitiesPage> createState() => _OpportunityListScreentate();
 }
 
-class _QuatationListScreentate extends State<QuatationListScreen> {
-  //OrderPlacedController oc = Get.put(OrderPlacedController());
-  QuatationController qc = Get.put(QuatationController());
+class _OpportunityListScreentate extends State<OpportunitiesPage> {
+  OpportunityController oppControl = Get.find();
   String currentDate = DateFormat('dd-MM-yyyy').format(DateTime.now());
-  String totalrecords = "0";
-  String filterrecords = '0';
-  String totalAmount = "₹0.00";
+  final ScrollController _scrollController = ScrollController();
+
+  var totalrecords = "0".obs;
+  var filterrecords = '0'.obs;
+  var totalAmount = "₹0.00".obs;
   @override
   void initState() {
     super.initState();
+    oppControl.searchQuery.value = '';
+
     _fetchData();
+    _scrollController.addListener(_scrollListener); // ADD THIS LINE
+
   }
   Future<void> _fetchData() async {
-    await qc.Quatationlist(context);
+    await oppControl.Opportunitylist(context, isPagination: false);
+    final list = oppControl.opplist.value;
+    if (list is Map) {
+      totalrecords.value = (list['recordsTotal'] ?? 0).toString();
+      filterrecords.value = (list['recordsFiltered'] ?? 0).toString();
+
+      // If total amount is returned from the API
+      final amount = list['totalAmount']; // Adjust key if different
+      if (amount != null) {
+        totalAmount.value = "₹${amount.toStringAsFixed(2)}"; // format as needed
+      }
+    }
   }
+
+  void _scrollListener() {
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 100 &&
+        !oppControl.isLoadingMore.value &&
+        !oppControl.isLastPage.value) {
+      _loadMoreItems();
+    }
+  }
+
+  Future<void> _loadMoreItems() async {
+    await oppControl.Opportunitylist(context, isPagination: true);
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -42,28 +76,32 @@ class _QuatationListScreentate extends State<QuatationListScreen> {
     return Scaffold(
         backgroundColor: AppColors.primary,
         appBar: AppBar(
+          backgroundColor: AppColors.white,
+
           title: Text(
-            "Quotation Catalog",
+            "Opportunity Catalog",
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
+              color: Colors.black
             ),
           ),
 
           actions: [
-            Text(
-              "New",
-              style: TextStyle(
-                color: AppColors.blues,
-              ),
-            ),
-            SizedBox(
-              width: 5,
-            ),
-            GestureDetector(onTap: () => Get.to(() => NewQuotationScreen()) ,child:
+
+            GestureDetector(
+                onTap: () => Get.to(() => NewOpportunitiesPage()) ,child:
             Row(
               children: [
-
+                Text(
+                  "New",
+                  style: TextStyle(
+                    color: AppColors.blues,
+                  ),
+                ),
+                SizedBox(
+                  width: 5,
+                ),
                 Container(
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(100),
@@ -106,71 +144,82 @@ class _QuatationListScreentate extends State<QuatationListScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  SizedBox(
-                    height: height * 0.08,
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(horizontal: height * 0.015),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceAround,
-                        // crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text(
-                                'Total Amount',
-                                style: TextStyle(
-                                    color:
-                                    Color.fromARGB(255, 147, 147, 147)),
-                              ),
-                              Text(
-                                totalAmount,
-                                style: TextStyle(
-                                    fontSize: height * 0.025,
-                                    fontWeight: FontWeight.bold),
-                              ),
-                            ],
-                          ),
-                          const Spacer(),
-                          Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              const Text('Records',
+                  Obx(()=> SizedBox(
+                      height: height * 0.08,
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(horizontal: height * 0.015),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceAround,
+                          // crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'Total Amount',
                                   style: TextStyle(
-                                      color: Color.fromARGB(
-                                          255, 147, 147, 147))),
-                              Text(
-                                totalrecords,
-                                style: TextStyle(
-                                    fontSize: height * 0.025,
-                                    fontWeight: FontWeight.bold),
-                              ),
-                            ],
-                          ),
-                          const Spacer(),
-                          // Column(
-                          //   mainAxisAlignment: MainAxisAlignment.center,
-                          //   crossAxisAlignment: CrossAxisAlignment.end,
-                          //   children: [
-                          //     const Text(
-                          //       'UnApproved',
-                          //       style: TextStyle(
-                          //           color:
-                          //           Color.fromARGB(255, 147, 147, 147)),
-                          //     ),
-                          //     Text(
-                          //       filterrecords,
-                          //       style: TextStyle(
-                          //           fontSize: height * 0.025,
-                          //           fontWeight: FontWeight.bold),
-                          //     ),
-                          //   ],
-                          // ),
-                        ],
-                      ),
+                                      color:
+                                      Color.fromARGB(255, 147, 147, 147)),
+                                ),
 
+                                Text(
+                                  totalAmount.value,
+                                  style: TextStyle(
+                                      fontSize: height * 0.025,
+                                      fontWeight: FontWeight.bold),
+                                )
+
+                              ],
+                            ),
+                            const Spacer(),
+                            Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                const Text('Records',
+                                    style: TextStyle(
+                                        color: Color.fromARGB(
+                                            255, 147, 147, 147))),
+                                // Text(
+                                //     totalrecords.value,
+                                //     style: TextStyle(
+                                //         fontSize: height * 0.025,
+                                //         fontWeight: FontWeight.bold),
+                                //   ),
+                               Text(
+                                  totalrecords.value,
+                                  style: TextStyle(
+                                    fontSize: height * 0.025,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                )
+
+                              ],
+                            ),
+                            const Spacer(),
+                            // Column(
+                            //   mainAxisAlignment: MainAxisAlignment.center,
+                            //   crossAxisAlignment: CrossAxisAlignment.end,
+                            //   children: [
+                            //     const Text(
+                            //       'UnApproved',
+                            //       style: TextStyle(
+                            //           color:
+                            //           Color.fromARGB(255, 147, 147, 147)),
+                            //     ),
+                            //     Text(
+                            //       filterrecords,
+                            //       style: TextStyle(
+                            //           fontSize: height * 0.025,
+                            //           fontWeight: FontWeight.bold),
+                            //     ),
+                            //   ],
+                            // ),
+                          ],
+                        ),
+
+                      ),
                     ),
                   ),
                   const Divider(
@@ -231,25 +280,30 @@ class _QuatationListScreentate extends State<QuatationListScreen> {
               ),
             ),
           ),
-          Expanded(child:
-          Obx(() {
-            if (qc.isLoading2.value) {
-              return Center(child: CircularProgressIndicator());
-            } else if (qc.errorMessage2.value.isNotEmpty) {
-              return Center(
-                  child: Text(qc.errorMessage2.value));
-            } else {
-              final dataList = qc.quatationlist.value;
-              final list = dataList is Map<dynamic, dynamic> ? dataList : {};
-              final employeeOnDuty =list["data"] is List<dynamic> ? list["data"] : [];
-              return ListView.builder(
-                  itemCount: employeeOnDuty.length,
-                  itemBuilder: (context, index) {
-                    final item = employeeOnDuty[index] as Map<String, dynamic>;
-                       totalrecords = (list['recordsTotal']).toString();
-                      // totalAmount = list[''];
-                       filterrecords = (list['recordsFiltered']).toString();
 
+          Expanded(child: Obx(() {
+            if (oppControl.isLoading.value) {
+              return const Center(child: CircularProgressIndicator());
+            } else if (oppControl.errorMessage.value.isNotEmpty) {
+              return Center(child: Text(oppControl.errorMessage.value));
+            } else {
+              if (oppControl.filteredcust.isEmpty) {
+                return Center(
+                  child: Text(
+                    'No Products Found',
+                    style: TextStyle(fontSize: 18),
+                  ),
+                );
+              }
+              return ListView.builder(
+                  controller: _scrollController,
+                  itemCount:
+                  oppControl.filteredcust.length + (oppControl.isLoadingMore.value ? 1 : 0),
+                  itemBuilder: (context, index) {
+                    if (index == oppControl.filteredcust.length) {
+                      return Center(child: CircularProgressIndicator());
+                    }
+                    final item = oppControl.filteredcust[index];
                     return  Padding(
                       padding:  EdgeInsets.symmetric(vertical: 5,horizontal: Get.height * 0.015),
                       child:InkWell(
@@ -260,7 +314,8 @@ class _QuatationListScreentate extends State<QuatationListScreen> {
                             context,
                             MaterialPageRoute(
                               builder: (context) =>
-                              QuatationDetailsScreen(customerId: (item['id']).toString()),
+                                  QuatationDetailsScreen(oppId: (item['id']).toString(),page:'opportunity',),
+                              //customerId: (item['id']).toString()
                             ),
                           );
                         },
@@ -271,7 +326,11 @@ class _QuatationListScreentate extends State<QuatationListScreen> {
                           child: Container(
                             color: Colors.white,
                             child: Padding(
-                              padding:  EdgeInsets.symmetric(vertical: 5,horizontal: Get.height * 0.015),
+                              padding:  EdgeInsets.symmetric(
+                                  vertical: 5,
+
+                                  horizontal: Get.height * 0.015
+                              ),
                               child:Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
@@ -280,8 +339,8 @@ class _QuatationListScreentate extends State<QuatationListScreen> {
                                     MainAxisAlignment.spaceBetween,
                                     children: [
                                       Text(
-                                        'Doc No: ${item["quotation_no_prefix"]}',
-                                      //  "Doc No: ${item["id"]}",
+                                        'Doc No: ${item["opportunity_no_prefix"]}',
+                                        //  "Doc No: ${item["id"]}",
                                         style: TextStyle(
                                             fontSize: 15,
                                             fontWeight: FontWeight.w500,
@@ -295,54 +354,54 @@ class _QuatationListScreentate extends State<QuatationListScreen> {
                                       //       color: AppColors.blues),
                                       // ),
                                       Container(
-                                        height: height * 0.020,
+                                        height: height * 0.025,
                                         width: width * 0.2,
                                         decoration: BoxDecoration(
                                             color: item['status_id'] == 1?
-                                            Color.fromARGB(255, 255, 232, 157):
-                                            Color(0Xff30CB00),
+                                            Color.fromARGB(255, 255, 232, 157):Colors.lightGreen.shade200,
+                                          //  Color(0Xff30CB00),
                                             borderRadius: BorderRadius.only(
                                                 topRight: Radius.circular(20),
                                                 bottomLeft: Radius.circular(10))),
                                         child: Center(
                                           child: Text(
-                                              item['status_name'] ?? '- -',
+                                              item['status_id'] == 1 ? 'Open':'Close',
                                               style: TextStyle(
-                                                  fontSize: height * 0.009,
-                                                  color: item['status_id'] == 1?Colors.red:Colors.white,
+                                                  fontSize: height * 0.01,
+                                                  color: item['status_id'] == 1?Colors.red:Colors.black,
                                                   fontWeight: FontWeight.bold)),
                                         ),
                                       ),
                                     ],
-                                       ),
-                                      // CommonRichText(
-                                      //   label: 'Doc No: ',
-                                      //   value: item["doc_no"] ?? '- -',
-                                      // ),
-                                      // GestureDetector(
-                                      //   onTap: () async {
-                                      //     // await customerController.fetchUserID(
-                                      //     //     context,
-                                      //     //     itemId); // Fetch the details
-                                      //     // Get.to(() => CustomerEditscreen());
-                                      //   },
-                                      //   child: Row(
-                                      //     children: [
-                                      //       // Text(
-                                      //       //   "Edit",
-                                      //       //   style: TextStyle(
-                                      //       //       fontSize: 14,
-                                      //       //       // fontWeight: FontWeight.w500,
-                                      //       //       color: AppColors.blues),
-                                      //       // ),
-                                      //       // Icon(
-                                      //       //   Icons.edit,
-                                      //       //   color: AppColors.blues,
-                                      //       //   size: 14,
-                                      //       // )
-                                      //     ],
-                                      //   ),
-                                      // )
+                                  ),
+                                  // CommonRichText(
+                                  //   label: 'Doc No: ',
+                                  //   value: item["doc_no"] ?? '- -',
+                                  // ),
+                                  // GestureDetector(
+                                  //   onTap: () async {
+                                  //     // await customerController.fetchUserID(
+                                  //     //     context,
+                                  //     //     itemId); // Fetch the details
+                                  //     // Get.to(() => CustomerEditscreen());
+                                  //   },
+                                  //   child: Row(
+                                  //     children: [
+                                  //       // Text(
+                                  //       //   "Edit",
+                                  //       //   style: TextStyle(
+                                  //       //       fontSize: 14,
+                                  //       //       // fontWeight: FontWeight.w500,
+                                  //       //       color: AppColors.blues),
+                                  //       // ),
+                                  //       // Icon(
+                                  //       //   Icons.edit,
+                                  //       //   color: AppColors.blues,
+                                  //       //   size: 14,
+                                  //       // )
+                                  //     ],
+                                  //   ),
+                                  // )
 
                                   Divider(),
 
@@ -359,30 +418,30 @@ class _QuatationListScreentate extends State<QuatationListScreen> {
                                         .spaceBetween,
                                     children: [
                                       const Text(
-                                          'Quatation On'),
+                                          'Opportunity On'),
                                       Text(item[
-                                      "quotation_date"] ?? '- -'
+                                      "opportunity_date"] ?? '- -'
 
                                       ),
 
 
                                     ],
                                   ),
-                                  Row(
-                                    mainAxisAlignment:
-                                    MainAxisAlignment
-                                        .spaceBetween,
-                                    children: [
-                                      const Text(
-                                          'Valid Till'),
-                                      Text(item[
-                                      "valid_till"] ?? '- -'
-
-                                      ),
-
-
-                                    ],
-                                  ),
+                                  // Row(
+                                  //   mainAxisAlignment:
+                                  //   MainAxisAlignment
+                                  //       .spaceBetween,
+                                  //   children: [
+                                  //     const Text(
+                                  //         'Valid Till'),
+                                  //     Text(item[
+                                  //     "valid_till"] ?? '- -'
+                                  //
+                                  //     ),
+                                  //
+                                  //
+                                  //   ],
+                                  // ),
                                   Row(
                                     mainAxisAlignment:
                                     MainAxisAlignment
@@ -436,7 +495,7 @@ class _QuatationListScreentate extends State<QuatationListScreen> {
                                       const Text(
                                           'Valid'),
                                       Text(item[
-                                      "valid_till"] ?? '- -'
+                                      "validity"] ?? '- -'
 
                                       ),
 
@@ -474,21 +533,21 @@ class _QuatationListScreentate extends State<QuatationListScreen> {
 
                                     ],
                                   ),
-                                  Row(
-                                    mainAxisAlignment:
-                                    MainAxisAlignment
-                                        .spaceBetween,
-                                    children: [
-                                      const Text(
-                                          'Remarks'),
-                                      Text(item[
-                                      "remarks"] ?? '- -'
-
-                                      ),
-
-
-                                    ],
-                                  ),
+                                  // Row(
+                                  //   mainAxisAlignment:
+                                  //   MainAxisAlignment
+                                  //       .spaceBetween,
+                                  //   children: [
+                                  //     const Text(
+                                  //         'Remarks'),
+                                  //     Text(item[
+                                  //     "remarks"] ?? '- -'
+                                  //
+                                  //     ),
+                                  //
+                                  //
+                                  //   ],
+                                  // ),
                                   Row(
                                     mainAxisAlignment:
                                     MainAxisAlignment
@@ -505,7 +564,21 @@ class _QuatationListScreentate extends State<QuatationListScreen> {
                                     ],
                                   ),
 
+                                  Row(
+                                    mainAxisAlignment:
+                                    MainAxisAlignment
+                                        .spaceBetween,
+                                    children: [
+                                      const Text(
+                                          'Placed By'),
+                                      Text((item[
+                                      "user_name"]) ?? '- -',style: TextStyle(color: Colors.blue[900]),
 
+                                      ),
+
+
+                                    ],
+                                  ),
                                   // Row(
                                   //   mainAxisAlignment:
                                   //   MainAxisAlignment.spaceBetween,
@@ -523,38 +596,38 @@ class _QuatationListScreentate extends State<QuatationListScreen> {
                                   //       ),
                                   //     ),
 
-                                      // CommonRichText(
-                                      //   label: 'Term: ',
-                                      //   value: item["payment_term"] ?? '- -',
-                                      // ),
-                                      // CommonRichText(
-                                      //   label: 'Remarks: ',
-                                      //   value: item["remarks"] ?? '- -',
-                                      // ),
-                                      // CommonRichText(
-                                      //   label: 'Tax: ',
-                                      //   value: item["taxes"] ?? '- -',
-                                      // ),
+                                  // CommonRichText(
+                                  //   label: 'Term: ',
+                                  //   value: item["payment_term"] ?? '- -',
+                                  // ),
+                                  // CommonRichText(
+                                  //   label: 'Remarks: ',
+                                  //   value: item["remarks"] ?? '- -',
+                                  // ),
+                                  // CommonRichText(
+                                  //   label: 'Tax: ',
+                                  //   value: item["taxes"] ?? '- -',
+                                  // ),
 
-                                      // GestureDetector(
-                                      //   onTap: () {},
-                                      //   child: Row(
-                                      //     children: [
-                                      //       Text(
-                                      //         "Details",
-                                      //         style: TextStyle(
-                                      //             fontSize: 14,
-                                      //             // fontWeight: FontWeight.w500,
-                                      //             color: Colors.grey),
-                                      //       ),
-                                      //       Icon(
-                                      //         Icons.arrow_forward_ios_outlined,
-                                      //         color: Colors.grey,
-                                      //         size: 14,
-                                      //       )
-                                      //     ],
-                                      //   ),
-                                      // )
+                                  // GestureDetector(
+                                  //   onTap: () {},
+                                  //   child: Row(
+                                  //     children: [
+                                  //       Text(
+                                  //         "Details",
+                                  //         style: TextStyle(
+                                  //             fontSize: 14,
+                                  //             // fontWeight: FontWeight.w500,
+                                  //             color: Colors.grey),
+                                  //       ),
+                                  //       Icon(
+                                  //         Icons.arrow_forward_ios_outlined,
+                                  //         color: Colors.grey,
+                                  //         size: 14,
+                                  //       )
+                                  //     ],
+                                  //   ),
+                                  // )
 
                                 ],
                               ),
@@ -564,7 +637,7 @@ class _QuatationListScreentate extends State<QuatationListScreen> {
                           ),
                         ),
                       ),
-                      );
+                    );
 
                   });
             }
