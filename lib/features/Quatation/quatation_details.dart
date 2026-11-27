@@ -36,8 +36,14 @@ class _QuatationScreentate extends State<QuatationDetailsScreen> {
   @override
   void initState() {
     super.initState();
+    status = false;
+    pdf_file = null;
+    customerId.value = '';
+    qc.errorMessage2.value = '';
+    qc.isLoading2.value = true;
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      qc.Quatationdetails(context, widget.oppId!,widget.page);
+      if (!mounted) return;
+      qc.Quatationdetails(context, widget.oppId!, widget.page);
     });
   }
   Future<void> _launchURL(url) async {
@@ -248,25 +254,41 @@ class _QuatationScreentate extends State<QuatationDetailsScreen> {
                   } else {
                     final dataList = qc.quatationdetails.value;
                    // final list = dataList is Map<dynamic, dynamic> ? dataList : {};
-                    final map =  dataList['quotation'];
-                    final items = dataList["quotation_items"] is List<dynamic>
-                        ? dataList["quotation_items"]
-                        : [];
-                    pdf_file = dataList['pdf_file'];
-                    if(map == null || map['customer_id'] == null){
-                      return Text('Reload the page ${map['customer_id']}');
+                    final quotation = dataList['quotation'] ??
+                        dataList['opportunity'] ??
+                        dataList['order'];
+                    if (quotation is! Map) {
+                      return const Center(child: Text('Unable to load details'));
                     }
-                    customerId.value = map['customer_id'].toString();
-                    // if (map['status_id'] == 1) {
-                    //   status = true;
-                    // } else {
-                    //   status = false;
-                    // }
-                    WidgetsBinding.instance.addPostFrameCallback((_) {
-                      setState(() {
-                        status = (map['status_id'] == 1);
+                    final map = quotation;
+                    final rawItems = dataList['quotation_items'] ??
+                        dataList['opportunity_items'] ??
+                        dataList['order_items'];
+                    final items = rawItems is List ? rawItems : [];
+                    pdf_file = dataList['pdf_file'];
+                    dynamic customer = map['customer_id'] ?? map['customerId'];
+                    if (customer == null) {
+                      for (final item in items) {
+                        if (item is Map) {
+                          customer = item['customer_id'] ?? item['customerId'];
+                          if (customer != null) break;
+                        }
+                      }
+                    }
+                    customer ??= map['customer_code'] ?? map['customer_webid'];
+                    final customerText = customer?.toString() ?? '';
+                    if (customerText.isNotEmpty && customerText != 'null') {
+                      customerId.value = customerText;
+                    }
+                    final isOpen = map['status_id'] == 1;
+                    if (status != isOpen) {
+                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                        if (!mounted) return;
+                        setState(() {
+                          status = isOpen;
+                        });
                       });
-                    });
+                    }
                   //  print(status);
                     // print(map);
                     // print(map['customer_id']);

@@ -1,16 +1,3 @@
-buildscript {
-    ext.kotlin_version = '2.0.20'
-
-    repositories {
-        google()
-        mavenCentral()
-    }
-
-    dependencies {
-        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
-        // Add other classpath dependencies if needed
-    }
-}
 allprojects {
     repositories {
         google()
@@ -22,8 +9,15 @@ rootProject.buildDir = "../build"
 subprojects {
     project.buildDir = "${rootProject.buildDir}/${project.name}"
 }
-subprojects {
-    project.evaluationDependsOn(":app")
+subprojects { subproject ->
+    subproject.afterEvaluate {
+        if (subproject.plugins.hasPlugin("com.android.library") ||
+                subproject.plugins.hasPlugin("com.android.application")) {
+            subproject.android {
+                compileSdk = 36
+            }
+        }
+    }
 }
 
 tasks.register("clean", Delete) {

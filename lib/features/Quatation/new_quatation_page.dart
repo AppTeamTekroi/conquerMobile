@@ -1289,7 +1289,7 @@ isExpanded : true,
                                         items: dc.warranty.map<DropdownMenuItem<String>>(
                                                   (workitem) =>DropdownMenuItem<String>(
                                                   value:( workitem['id']).toString(),
-                                                  child: Text(workitem['name'],
+                                                  child: Text((workitem['name'] ?? '').toString(),
                                                       overflow: TextOverflow.ellipsis,
                                                       maxLines: 5,
                                                       style: TextStyle(
@@ -1404,7 +1404,7 @@ isExpanded : true,
                                       items: dc.validity.map<DropdownMenuItem<String>>(
                                             (workitem) =>DropdownMenuItem<String>(
                                           value:( workitem['id']).toString(),
-                                          child: Text(workitem['name'],
+                                          child: Text((workitem['name'] ?? '').toString(),
                                               overflow: TextOverflow.ellipsis,
                                               maxLines: 5,
                                               style: const TextStyle(

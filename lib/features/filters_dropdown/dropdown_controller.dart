@@ -290,7 +290,12 @@ var warranty= [].obs;
         errorMessage.value = 'Error: ${failure.message}';
       },
               (responseData) {
-                warranty.value = responseData;
+                final list = responseData is List ? responseData : [];
+                warranty.value = list.where((item) {
+                  if (item is! Map) return false;
+                  final name = item['name']?.toString().trim();
+                  return name != null && name.isNotEmpty;
+                }).toList();
             print('***********Duty data successfully fetched in controller');
             errorMessage.value = '';
             isLoading.value = false;
@@ -332,7 +337,12 @@ var warranty= [].obs;
         errorMessage.value = 'Error: ${failure.message}';
       },
               (responseData) {
-            validity.value = responseData;
+            final list = responseData is List ? responseData : [];
+            validity.value = list.where((item) {
+              if (item is! Map) return false;
+              final name = item['name']?.toString().trim();
+              return name != null && name.isNotEmpty;
+            }).toList();
             print('***********Duty data successfully fetched in controller');
             errorMessage.value = '';
             isLoading.value = false;

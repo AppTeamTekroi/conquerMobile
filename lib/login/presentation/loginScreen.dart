@@ -296,11 +296,10 @@ class _LoginScreenState extends State<LoginScreen> {
                                           loginController.branch = response['branch_name'] ?? '';
 
                                           print("${response['access_token']}");
-                                          final SharedPreferences _prefs =
+                                          final SharedPreferences prefs =
                                           await SharedPreferences.getInstance();
-                                          _prefs.setString('token', loginController.token);
-
-                                          _prefs.setString('branch', loginController.branch);
+                                          await prefs.setString('token', loginController.token);
+                                          await prefs.setString('branch', loginController.branch);
 
                                           loginController.usernameController
                                               .clear();
@@ -308,24 +307,19 @@ class _LoginScreenState extends State<LoginScreen> {
                                               .clear();
 
                                           Get.off(() => BottomNav());
-                                          return; // Exit the function after successful login
-                                        } else if(response["error"] != null){
-                                          QuickAlert.show(
-                                            context: context,
-                                            title: 'Failed',
-                                            type: QuickAlertType.error,
-                                            text: 'check login credentials',
-                                          );
+                                          return;
+                                        }
 
-                                        }
-                                        else {
-                                          QuickAlert.show(
-                                            context: context,
-                                            title: 'Failed',
-                                            type: QuickAlertType.error,
-                                            text: 'server erroe',
-                                          );
-                                        }
+                                        final errorText = loginController
+                                                .lastError.value.isNotEmpty
+                                            ? loginController.lastError.value
+                                            : 'Check login credentials';
+                                        QuickAlert.show(
+                                          context: context,
+                                          title: 'Failed',
+                                          type: QuickAlertType.error,
+                                          text: errorText,
+                                        );
                                       } catch (e) {
                                         print('Server error: $e');
                                         QuickAlert.show(

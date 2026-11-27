@@ -12,8 +12,8 @@ class URLConst {
    // static const dashboard = "mobile-login";
 
 
-   //static const customers = "get-customers?draw=1&length=10&start=0";
-  static const customers = "getAllCustomers";
+   static const customers = "get-customers?draw=1&length=10&start=0";
+  // static const customers = "getAllCustomers";
   static const customersInfo = "get-customer-info/";
   static const storeCustomer = "store-new-customer";
 

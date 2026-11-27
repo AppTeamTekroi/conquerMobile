@@ -339,7 +339,7 @@ class DropdownSourceImpl implements DropdownSourceRepository {
         Uri.parse(URLConst.baseURL+URLConst.shipping+customerId),
         headers: headers,
       );
-     // print("ID fetched: ${response.body}");
+     print("Shipping URL: ${URLConst.baseURL+URLConst.shipping+customerId}");
 
       if (response.statusCode == 401) {
         // ScaffoldMessenger.of(context).showSnackBar(

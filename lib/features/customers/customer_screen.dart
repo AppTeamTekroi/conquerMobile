@@ -382,7 +382,7 @@ class _CustomerScreenState extends State<CustomerScreen> {
                                   ),
                                   CommonRichText(
                                     label: 'Sales Emp: ',
-                                    value: item["salesEmp_Name"] ?? '- -',
+                                    value: item["sales_emp_name"].toString() ?? '- -',
                                   ),
                                   Row(
                                     mainAxisAlignment:
@@ -397,7 +397,7 @@ class _CustomerScreenState extends State<CustomerScreen> {
                                       ),
                                       GestureDetector(
                                         onTap: () {},
-                                        child: Row(
+                                        child: const Row(
                                           children: [
                                             Text(
                                               "Details",

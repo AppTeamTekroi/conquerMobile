@@ -115,8 +115,6 @@ class _QuotationScreenState extends State<NewConversionScreen> {
     dc.fetchwarrenty(context);
     dc.fetchdelivery(context);
     dc.fetchvalidity(context);
-    dc.fetchshipping(context, widget.customerid);
-    dc.fetchbilling(context, widget.customerid);
     DateTime validTillDate = DateTime.now();
         //.add(Duration(days: 1));
 
@@ -140,32 +138,106 @@ class _QuotationScreenState extends State<NewConversionScreen> {
     pickedFileName= '';
     total.value= '';
   }
-  Future<void> _checkid() async {
-    await cartController.fetchConvertCart(context, widget.customerid,widget.page,);
+  String resolvedCustomerId = '';
 
+  String? _readId(dynamic value) {
+    final text = value?.toString() ?? '';
+    if (text.isEmpty || text == 'null') return null;
+    return text;
+  }
+
+  String? _findCustomerId(dynamic node) {
+    if (node is Map) {
+      final direct = _readId(node['customer_id'] ?? node['customerId']);
+      if (direct != null) return direct;
+      for (final value in node.values) {
+        final found = _findCustomerId(value);
+        if (found != null) return found;
+      }
+    } else if (node is List) {
+      for (final value in node) {
+        final found = _findCustomerId(value);
+        if (found != null) return found;
+      }
+    }
+    return null;
+  }
+
+  List<dynamic> _itemList(dynamic raw) {
+    if (raw is! List) return [];
+    return raw.whereType<Map>().map((item) => Map<String, dynamic>.from(item)).toList();
+  }
+
+  void _showOpportunityItems(Map list, Map<String, dynamic> map) {
+    final cartData = cartController.cartlist.value['data'];
+    if (cartData is List && cartData.isNotEmpty) return;
+
+    final items = _itemList(
+      list['opportunity_items'] ??
+          list['quotation_items'] ??
+          list['order_items'] ??
+          map['opportunity_items'],
+    );
+    if (items.isEmpty) return;
+
+    final qtyRaw = map['total_quantity'];
+    final qty = qtyRaw is num && qtyRaw > 0 ? qtyRaw.toInt() : items.length;
+    cartController.cartlist.value = {
+      'data': items,
+      'total_quantity': qty,
+      'total_amount': map['total_amount'],
+    };
+    cartController.cartitems.value = items;
+    cartController.totalorder.value = qty;
+    cartController.totalamount.value = map['total_amount']?.toString() ?? '';
+  }
+
+  Future<void> _checkid() async {
     print('in convertion page${widget.oppId},${widget.customerid}');
-     final dataList = qc.quatationdetails.value;
-      print(dataList);
-      final list = dataList is Map<dynamic, dynamic> ? dataList : {};
-      final map = list['quotation'];
-      selectedCustomerName.value = map['customer_commonname'] ?? '--';
-      selectedcardcode.value = map['customer_code'] ?? '--';
-      selectedemail.value = map['customer_code'] ?? '--';
-      selectedsalesemployee.value = map['sales_emp_name'] ?? '--';
-      // widget.widget.customerid = map['customer_id'];
+    final dataList = qc.quatationdetails.value;
+    print(dataList);
+    final list = dataList is Map ? dataList : {};
+    final raw = list['quotation'] ?? list['opportunity'] ?? list['order'];
+    if (raw is! Map) {
+      await cartController.fetchConvertCart(context, widget.customerid, widget.page);
+      return;
+    }
+    final map = Map<String, dynamic>.from(raw);
+    resolvedCustomerId = _readId(widget.customerid) ??
+        _findCustomerId(list) ??
+        _findCustomerId(map) ??
+        _readId(map['customer_code']) ??
+        _readId(map['customer_webid']) ??
+        '';
+
+    cartController.clear();
+    await cartController.fetchConvertCart(context, resolvedCustomerId, widget.page);
+    _showOpportunityItems(list, map);
+
+    selectedCustomerName.value = map['customer_commonname']?.toString() ?? '--';
+    selectedcardcode.value = map['customer_code']?.toString() ?? '--';
+    selectedemail.value = map['customer_code']?.toString() ?? '--';
+    selectedsalesemployee.value = map['sales_emp_name']?.toString() ?? '--';
 
     bill_id.value = map['address_id']?.toString() ?? '0';
     ship_id.value = map['address_shipto']?.toString() ?? '0';
-    opp_type.value = map['opportunity_type'] ?? '';
-    opp_renewType.value = map['opportunity_renewal'] ?? '';
-    selectedterm.value = map['payment_terms'] ?? '';
+    opp_type.value = map['opportunity_type']?.toString() ?? '';
+    opp_renewType.value = map['opportunity_renewal']?.toString() ?? '';
+    final payment = map['payment_terms'] ?? map['payment_term'];
+    selectedterm.value =
+        (payment == null || payment.toString() == 'null') ? '' : payment.toString();
 
-    //TextEditingControllers
-    opp_name.text = map['opportunity_name'] ?? '';
-    opp_subtype.text = map['opportunity_subtype'] ?? '';
+    opp_name.text = map['opportunity_name']?.toString() ?? '';
+    opp_subtype.text = map['opportunity_subtype']?.toString() ?? '';
     freight.text = map['freight']?.toString() ?? '';
-    otherterms.text = map['other_term_condition'] ?? '';
-    status.value = map['status_id'];
+    otherterms.text = map['other_term_condition']?.toString() ?? '';
+    final statusId = map['status_id'];
+    if (statusId is int) status.value = statusId;
+
+    if (resolvedCustomerId.isNotEmpty) {
+      dc.fetchshipping(context, resolvedCustomerId);
+      dc.fetchbilling(context, resolvedCustomerId);
+    }
 
     // final items = list["quotation_items"] is List<dynamic>
       //     ? list["quotation_items"]
@@ -448,31 +520,21 @@ class _QuotationScreenState extends State<NewConversionScreen> {
                     ),
 
                     Obx(() {
-                      if(cartController.cartitems.isNotEmpty) {
-                        if (cartController.totalorder.value > 0) {
-                          // if (cartController.isLoading1.value) {
-                          //   return const Center(
-                          //       child: CircularProgressIndicator());
-                          // }
-                          // else if (cartController
-                          //     .errorMessage1.value.isNotEmpty) {
-                          //   return Center(
-                          //       child:
-                          //       Text(cartController.errorMessage1.value));
-                          // }
-                          // else {
-                          final dataList = cartController.cartlist.value;
-                          final maplist = dataList is Map<dynamic, dynamic>
-                              ? dataList
-                              : {};
+                      final dataList = cartController.cartlist.value;
+                      final maplist = dataList is Map ? dataList : {};
+                      final cartLines = maplist['data'] is List
+                          ? List<dynamic>.from(maplist['data'])
+                          : <dynamic>[];
+                      final detail = qc.quatationdetails.value;
+                      final detailMap = detail is Map ? detail : {};
+                      final rawDetail = detailMap['opportunity_items'] ??
+                          detailMap['quotation_items'] ??
+                          detailMap['order_items'];
+                      final detailLines =
+                          rawDetail is List ? List<dynamic>.from(rawDetail) : <dynamic>[];
+                      final result = cartLines.isNotEmpty ? cartLines : detailLines;
 
-                          // final list =
-                          //     maplist['result'] is Map<dynamic, dynamic>
-                          //         ? maplist['result']
-                          //         : {};
-                          final result = maplist["data"] is List<dynamic>
-                              ? maplist["data"]
-                              : [];
+                      if (result.isNotEmpty) {
 
                           return Column(children: [
                             Container(
@@ -487,8 +549,10 @@ class _QuotationScreenState extends State<NewConversionScreen> {
                                   shrinkWrap: true,
                                   itemCount: result.length,
                                   itemBuilder: (context, index) {
-                                    final item =
-                                    result[index] as Map<String, dynamic>;
+                                    final rawItem = result[index];
+                                    final item = rawItem is Map
+                                        ? Map<String, dynamic>.from(rawItem)
+                                        : <String, dynamic>{};
                                     final isExpanded =
                                         expandedStates[index] ?? false;
 
@@ -793,18 +857,21 @@ class _QuotationScreenState extends State<NewConversionScreen> {
                               onTap: () async {
                                 // pc.selectedProducts.value = [];
                                 // Navigator.of(context).pop();
+                                final customerId = resolvedCustomerId.isNotEmpty
+                                    ? resolvedCustomerId
+                                    : selectedcardcode.value;
                                 await Navigator.push(
                                   context,
                                   CupertinoPageRoute(
                                     builder: (context) =>
-                                        ProductQuatscreen(customerId: widget.customerid,cardCode: selectedcardcode.value,
+                                        ProductQuatscreen(customerId: customerId,cardCode: selectedcardcode.value,
                                           page: 'coq',
                                         ),
 
                                   ),
                                 );
-                                if(widget.customerid !=null)
-                                  await cartController.fetchConvertCart(context,widget.customerid!,widget.page);
+                                if(customerId.isNotEmpty && customerId != '--')
+                                  await cartController.fetchConvertCart(context,customerId,widget.page);
                               },
                               child: SizedBox(
                                 width: width * 0.9,
@@ -859,20 +926,26 @@ class _QuotationScreenState extends State<NewConversionScreen> {
                               ),
                             ),
                           ]);
-                        }
                       }
                       return GestureDetector(
                         onTap: () async {
-                          if (widget.customerid != null) {
+                          final customerId = resolvedCustomerId.isNotEmpty
+                              ? resolvedCustomerId
+                              : selectedcardcode.value;
+                          final hasCustomer = customerId.isNotEmpty &&
+                              customerId != '--' &&
+                              selectedCustomerName.value.isNotEmpty &&
+                              selectedCustomerName.value != '--';
+                          if (hasCustomer) {
                             print(
-                                "Navigating to Products with widget.customerid: $widget.customerid");
+                                "Navigating to Products with customerId: $customerId");
                             await Get.to(() => ProductQuatscreen(
-                              customerId: widget.customerid,
+                              customerId: customerId,
                               cardCode: selectedcardcode.value,
                               page: 'coq',
                             ));
                             await cartController.fetchConvertCart(
-                                context, widget.customerid,widget.page);
+                                context, customerId, widget.page);
                           } else {
                             Fluttertoast.showToast(
                               msg: "Please Select Customer",
@@ -1265,7 +1338,7 @@ class _QuotationScreenState extends State<NewConversionScreen> {
                                         items: dc.warranty.map<DropdownMenuItem<String>>(
                                               (workitem) =>DropdownMenuItem<String>(
                                             value:( workitem['id']).toString(),
-                                            child: Text(workitem['name'],
+                                            child: Text((workitem['name'] ?? '').toString(),
                                                 overflow: TextOverflow.ellipsis,
                                                 maxLines: 5,
                                                 style: TextStyle(
@@ -1374,7 +1447,7 @@ class _QuotationScreenState extends State<NewConversionScreen> {
                                     items: dc.validity.map<DropdownMenuItem<String>>(
                                           (workitem) =>DropdownMenuItem<String>(
                                         value:( workitem['id']).toString(),
-                                        child: Text(workitem['name'],
+                                        child: Text((workitem['name'] ?? '').toString(),
                                             style: TextStyle(
                                               fontSize: 16,
                                               color:  Colors.black,
@@ -2314,7 +2387,9 @@ class _QuotationScreenState extends State<NewConversionScreen> {
                   final prefs = await SharedPreferences.getInstance();
                   final id = prefs.getInt('id');
 
-                  if (widget.customerid == null || widget.customerid.isEmpty) {
+                  if (resolvedCustomerId.isEmpty &&
+                      (selectedcardcode.value.isEmpty ||
+                          selectedcardcode.value == '--')) {
                     Fluttertoast.showToast(
                       msg: "Please Select Customer",
                       toastLength: Toast.LENGTH_SHORT,
@@ -2338,7 +2413,9 @@ class _QuotationScreenState extends State<NewConversionScreen> {
 
                 final body = {
                     "type":1,
-                    "customerId": widget.customerid,
+                    "customerId": resolvedCustomerId.isNotEmpty
+                        ? resolvedCustomerId
+                        : selectedcardcode.value,
                     "address_id": bill_id.value,
                     "address_shipto": ship_id.value,
                     'opportunity_id': widget.oppId,
